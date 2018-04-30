@@ -1,0 +1,1394 @@
+<?page title="Approve PO" contentType="text/html;charset=UTF-8"?>
+<zk xmlns:x="native">
+<window title="Approve PO" border="normal" onCreate="checkuserlogin(); selectCBX(); showhead();">
+<style>
+	.txlbl{
+		font-size:15px;
+		font-weight:bold;
+		color:#0D35E3;
+	}
+	.lbltext{
+		font-size:11px;
+		font-weight:bold;
+		color:#0E6BEA;
+	}
+</style>
+<label id="lblcatman" visible="false"/>
+<listbox id="chklist"></listbox>
+<groupbox id="gbhead" >
+<hbox><image src="/images/p06.png" />
+<label id="lblteam" style="font-size:15; color:blue; font-weight:bold;" visible="false"/>
+<label id="lblvendor" style="font-size:15; color:blue; font-weight:bold;" visible="false"/>
+</hbox>
+<x:table width="100%">
+<x:tr>
+<x:td width="70%">
+		<groupbox height="40px">
+		<x:table>
+		<x:tr>		
+		<x:td>
+			<checkbox id="cxAll" label="ดูทั้งหมด" visible="false"/>
+		</x:td>
+		<x:td>
+			<hbox><label value="ทีม :" /><combobox id="cmbsaleteam" width="100px" onSelect="loadvendor();"/><label id="lblstm" visible="false" Style="font-weight:bold; color:#0043DB;"/></hbox>
+		</x:td>
+		<x:td>
+			<label value="เลือกเจ้าหนี้ :" /><combobox id="cmbap" width="150px"/>
+		</x:td>
+		<x:td>
+			<hbox><button label="ตกลง" image="/images/iOk.png" onClick="loadVendorPO_List()" /><button id="btnlogout" label="ออกจากระบบ" image="/images/logout16.png" onClick="clrusercookies();"/></hbox>
+		</x:td>
+		</x:tr>
+		</x:table>
+		</groupbox>
+</x:td>
+<x:td width="30%" align="right">
+		<groupbox height="40px">
+			<x:table>
+				<x:tr>
+					<x:td class="txlbl">จำนวน PO รออนุมัิติ :</x:td>
+					<x:td ><label id="lblpo" style="font-size:15px; font-weight:bold; color:#FF0054;" value="0"/></x:td>
+					<x:td class="txlbl">ใบ</x:td>
+				</x:tr>
+			</x:table>
+		</groupbox>
+</x:td>
+</x:tr>
+</x:table>
+	
+<grid mold="paging" pageSize="15" width="960px" visible="false">
+		<columns>
+			<column label="" />
+			<column label="รหัส"/>	
+			<column label="ชื่อเจ้าหนี้ [Vendor]" />		
+			<column label="มูลค่าเสนอซื้อ" />	
+			
+		</columns>
+		<rows id="vrow">
+		</rows>
+	</grid>
+<div align="center">
+<listbox id="lsbx1" multiple="true" checkmark="true" width="1000px" >
+
+	<listhead>
+		<listheader label="เลขที่ PO" sort="auto" width="180px" />
+		<listheader label="วันที่" sort="auto" width="100px"/>
+		<listheader label="มูลค่า" sort="auto" width="140px"/>		
+		<listheader label="คำอธิบาย" sort="auto" width="300px"/>
+		<listheader label="เจ้าหนี้" sort="auto" width="200px" visible="false"/>	
+		<listheader visible="false" />	
+		<listheader label="ชื่อผู้ติดต่อ"  width="80px"/>
+		<listheader label="E-mail" width="100px"/>
+		<listheader label="Creator" width="80px"/>
+		<listheader label="ข้อความ" width="100px"/>
+		<listheader label="รายละเอียด" width="80px"/>
+		<listheader label="คลิกแนบรูป" width="140px"/>
+		
+	</listhead>	
+</listbox>
+</div>
+	<groupbox id="gbapv" width="600px"> 
+	<hbox>
+	<button label="อนุมัติ PO" image="/images/approve.png" >
+	<attribute name="onClick">
+    //in disable case .
+    Messagebox.show("ยืนยันอนุมัติ PO ที่เลือก?",
+    "Question", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                 fapprovepo();
+                 lsbx1.getItems().clear();
+                }else if("onCancel".equals(e.getName())){                 
+            	}
+        	}
+       }
+    );
+	</attribute>
+	</button>
+	
+	<button label="ยกเลิก PO"  visible="false">
+	<attribute name="onClick">
+    //in disable case .
+    Messagebox.show("คุณแน่ใจว่าจะยกเลิกรายการที่เลือก?",
+    "Question", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                 //--------  fcancelpo();
+                }                
+            }
+        }
+    );
+	</attribute>
+	</button>		
+	<button label="ออก" onClick='Messagebox.show("ยังไม่เปิดใช้งาน")' visible="false"/>	
+	</hbox>
+	</groupbox>
+	</groupbox>
+	<!--PO Detail -->
+	<groupbox id="gbdetail" >
+	<image src="/images/p07.png" />
+	<grid>
+		<columns>
+			<column label=""/>
+			<column label=""/>
+			<column label=""/>
+			<column label=""/>
+		</columns>
+		<rows>
+			<row><label value="เลขที่ใบสั่งซื้อ :" /><label id="lblponumber" style="font-size:15; color:blue; font-weight:bold;"/><label value="วันที่เอกสาร" /><label id="lblpodate" style="font-size:15; color:blue; font-weight:bold;"/>
+			</row>
+			<row><label value="รหัสเจ้าหนี้ :"/><label id="lblapcode" style="font-size:15; color:blue; font-weight:bold;"/><label value="ชื่อเจ้าหนี้ :" /><label id="lblapname" style="font-size:15; color:blue; font-weight:bold;"/>
+			
+			</row>
+		</rows>
+	</grid>
+	<listbox id="pov">
+	<listhead>
+		<listheader label="รหัสสินค้า" sort="auto" width="100px"/>
+		<listheader label="ชื่อสินค้า" sort="auto" width="150px"/>
+		<listheader label="คลัง" sort="auto" width="30px"/>
+		<listheader label="ชั้นเก็บ" sort="auto" width="30px"/>
+		<listheader label="หน่วยนับ" sort="auto" width="80px" align="right"/>
+		<listheader label="จำนวน" sort="auto" width="100px" align="right"/>
+		<listheader label="ราคาซื้อ" sort="auto" width="100px" align="right"/>	
+		<listheader label="ส่วนลด" sort="auto" width="100px" align="center"/>	
+		<listheader label="จำนวนเงิน" sort="auto" width="120px" align="right"/>		
+		<listheader label="GP" sort="auto" width="50px" align="right"/>
+		<listheader label="ราคาขายเงินสด" sort="auto" width="100px" align="right"/>
+		<listheader label="เกรด" sort="auto" width="20px" align="center"/>
+		<listheader label="Department" sort="auto" width="100px"/>
+		<listheader label="MC Name" width="70px"/>
+		<listheader label="Buyer Name" sort="auto" width="70px"/>
+		
+	</listhead>	
+	</listbox>
+	<div align="right">
+	<grid>
+		<columns>
+			<column label="" align="right"/>
+			<column label="" align="right"/>
+			<column label="" align="right"/>
+			<column label="" align="right"/>
+		</columns>
+		<rows>
+			<row><label value="เครดิต(วัน)" style="font-size:11; color:blue;"/><label id="creditdate" style="font-size:11; font-weight:bold; color:blue;"/><label value="วันครบกำหนด" style="font-size:11; color:blue;"/> <label id="creditduedate" style="font-size:11; font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="เอกสารหมดอายุ" style="font-size:11; color:blue;"/><label id="docexpire" style="font-size:11; font-weight:bold; color:blue;"/><label value="วันที่หมดอายุ" style="font-size:11; color:blue;"/><label id="docexpiredate" style="font-size:11; font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="ระยะเวลาขนส่ง " style="font-size:11; color:blue;"/><label id="leadtime" style="font-size:11; font-weight:bold; color:blue;"/><label value="กำหนดส่ง" style="font-size:11; color:blue;"/><label id="leadtimedate" style="font-size:11; font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="ทีมขาย" style="font-size:11; color:blue;"/><label id="epteam" style="font-size:11; font-weight:bold; color:blue;"/><label value="ยอดรวมมูลค่าซื้อไม่รวมภาษี) " style="font-size:11; color:blue;"/><label id="lblnetamount"  style="font-size:18; color:blue; font-weight:bold;"/>
+			</row>		
+			<row spans="3">
+				<label value="ยอดรวมมูลค่าซื้อ(รวมภาษี) :" style="font-size:15; color:blue;" />
+				<label id="lblnetamountvat" style="font-size:18; color:blue; font-weight:bold;"/>
+			</row>	
+		</rows>
+	</grid>
+	</div>
+	<hbox><button label="กลับหน้าอนุมัติ" onClick="showhead()" image="/images/bback.png" /></hbox>
+</groupbox>
+
+<groupbox id="gbmap" visible="false">
+	<vbox>	
+	<x:table class="lbltext">
+	<x:tr>
+	<x:td>เลขที่เอกสาร :</x:td><x:td><textbox id="tdocno" readonly="true"/></x:td>
+	<x:td>วันที่เอกสาร :</x:td><x:td><textbox id="tdocdate" readonly="true"/></x:td>
+	</x:tr>
+	<x:tr>
+	<x:td>รหัสเจ้าหนี้ :</x:td><x:td><textbox id="tapcode" readonly="true"/></x:td>
+	<x:td>ชื่อเจ้าหนี้ :</x:td><x:td><textbox id="tapname" width="300px" readonly="true"/></x:td>
+	</x:tr>
+	<x:tr>
+	<x:td>มูลค่าสั่งซื้อรวม :</x:td><x:td colspan="3"><textbox id="tamount" readonly="true"/></x:td>
+	</x:tr>
+	<x:tr>
+	<x:td valign="top">ข้อความแนบ :</x:td><x:td colspan="3"><textbox rows="5" width="520px" id="tdesc"/></x:td>
+	</x:tr>
+	</x:table>
+	<hbox><label value="แนบแผนที่ "/>
+	<x:table>
+	<x:tr>
+	<x:td>
+	<vbox>
+	<!-- <label value="PDF ขนาดไม่เกิน 100kb" style="font-size:8px; color:#E30046;"/> -->
+	<hbox>
+		<fileupload  label="แนบไฟล์  1"
+            onUpload="processMedia(event.getMedias());" /><button id="btni1" label="ลบไฟล์" onClick="vdelimg1()" disabled="false"/>
+            </hbox></vbox>
+            </x:td>
+	<x:td>
+	<vbox>
+	<!-- <label value="PDF ขนาดไม่เกิน 100kb" style="font-size:8px; color:#E30046;"/>  -->
+	<hbox><fileupload id="uploadBtn2" label="แนบไฟล์  2"
+            onUpload="processMedia2(event.getMedias());" /><button id="btni2" label="ลบไฟล์" onClick="vdelimg2()" disabled="false"/>
+            </hbox></vbox>
+            </x:td>
+	<x:td><vbox>
+	<!-- <label value="PDF ขนาดไม่เกิน 100kb" style="font-size:8px; color:#E30046;"/> -->
+	<hbox><fileupload id="uploadBtn3" label="แนบไฟล์  3"
+            onUpload="processMedia3(event.getMedias());" /><button id="btni3" label="ลบไฟล์" onClick="vdelimg3()" disabled="false"/>
+            </hbox></vbox></x:td>
+	</x:tr>
+	<x:tr>
+	<x:td><label id="lblfname1" style="font-weight:bold; color:#078BBD;"/></x:td>
+	<x:td><label id="lblfname2" style="font-weight:bold; color:#078BBD;"/></x:td>
+	<x:td><label id="lblfname3" style="font-weight:bold; color:#078BBD;"/></x:td>
+	</x:tr>
+	<x:tr>
+	<x:td><iframe id="fmpic1" width="300" height="200px" /></x:td>
+	<x:td><iframe id="fmpic2" width="300" height="200px" /></x:td>
+	<x:td><iframe id="fmpic3" width="300" height="200px" /></x:td>
+	</x:tr>
+	</x:table>
+	</hbox>
+	<hbox><button label="บันทึก" onClick="Savepofile()" image="/images/Ok.png"/>
+	<button label="ปิดหน้านี้" onClick="showhead()" image="/images/32close.png" /></hbox>
+	</vbox>
+</groupbox>
+
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import org.apache.commons.io.IOUtils;
+
+
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.io.Files;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+import org.zkoss.zul.Grid;
+import org.zkoss.zul.Row;
+import org.zkoss.zul.Textbox;
+import org.zkoss.zul.Messagebox;
+import org.zkoss.util.media.Media;
+import org.zkoss.zul.Fileupload;
+import org.zkoss.zul.Button;
+import java.io.File;
+import java.io.IOException;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vdocno;
+Listbox lsbx;
+String expertcode;
+String vendorcode;
+String mccode;
+String vprofit;
+String vapid;
+String vponumber;
+String vapcode;
+String newept;
+String newapcode;
+String vckcat;
+String vcatcode;
+String vtype="";
+String vulevel;
+Integer intulevel;
+Row row1;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+//vuser ="panuvich";
+//vpassword="thaikom$$";
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";  
+
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+
+public void checkuserlogin(){
+	try{
+	Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	for (Cookie cookie : ck) {
+		if (cookie.getName().equals("cuser")) {
+			vuser =cookie.getValue().trim();
+		}
+	}
+	for (Cookie ckps : ck) {
+		if (ckps.getName().equals("cpass")) {
+			vpassword =ckps.getValue().trim();
+		}
+	}
+	for (Cookie ckpf : ck) {
+		if (ckpf.getName().equals("ckprofitcode")) {
+			vprofit = ckpf.getValue().trim();
+		}
+	}
+	for (Cookie ckcat : ck) {
+		if (ckcat.getName().equals("ckcatcode")) {
+			vckcat = ckcat.getValue().trim();
+			//System.out.println(vckcat);
+			lblcatman.setValue(vckcat);
+			//vcatcode=Integer.parseInt(vckcat);
+			
+		}
+	}
+	for(Cookie cklv :ck){
+		if(cklv.getName().equals("ulevel")){
+			vulevel = cklv.getValue().trim();
+			intulevel=Integer.parseInt(vulevel);
+		}
+	}
+	if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+		//System.out.println("cookie = "+cookies);
+		Executions.sendRedirect("index.zul");		
+	} else
+	{		
+		loadsaleteam();
+		gbapv.setVisible(false);
+	}	
+	}catch (Exception e){}
+}
+public void clrusercookies(){
+	try{
+		HttpServletResponse response = (HttpServletResponse)Executions.getCurrent().getNativeResponse();
+    	Cookie userCookie = new Cookie("user", "");
+    	Cookie passCookie = new Cookie("pass", ""); 
+    	response.addCookie(userCookie); 
+    	response.addCookie(passCookie);
+    	Executions.sendRedirect("index.zul");
+	}catch (Exception e){}
+	
+}
+
+
+public void loadVendorPO_List(){
+	
+	Integer i=0, x=0;
+	Integer countPO=0;
+	String StrQryPo;
+	String vQryPOByVendor;
+	Double vTotal=0.00;
+	vrow.getChildren().clear();	
+	viewAllPO();
+	// Listbox lsbx1 = new Listbox();
+	lsbx1.getItems().clear();
+	// lsbx1.clearSelection();
+	try{
+		if(cmbsaleteam.getSelectedIndex()>=0){
+			expertcode =cmbsaleteam.getSelectedItem().getValue().toString().trim();			
+			}else{expertcode="";}		
+		if(cmbap.getText() !=""){
+			vendorcode=cmbap.getSelectedItem().getValue().toString();			
+			}else{vendorcode="";}
+		 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		StrQryPo="exec usp_np_ponotconfirmdaily_Cat '"+expertcode+"','"+vendorcode+"',"+vtype+"";
+		System.out.println("PO-not Confirm="+StrQryPo);
+		s.executeQuery(StrQryPo);			
+		ResultSet rs = s.getResultSet();				
+		while(lsbx1.getItemCount()>0){
+			lsbx1.removeItemAt(0);
+		}
+		while(rs.next()){			
+			Listgroup lg = new Listgroup();
+			vapcode = rs.getString("apcode");
+			/*
+			//lg.appendChild(new Listcell(""));
+			lg.appendChild(new Listcell(rs.getString("apcode")));
+			lg.setWidth("100px");
+			lg.appendChild(new Listcell(rs.getString("apname")));
+			lg.setWidth("200px");
+			lg.appendChild(new Listcell(" รวมมูลค่าซื้อ  :"));
+			lg.setWidth("80px");
+			lg.appendChild(new Listcell(numformat.format(rs.getDouble("sumnetamount"))));
+			lg.setWidth("100px");
+			lg.appendChild(new Listcell(" เดือนนี้ซื้อไปแล้วมูลค่า : "));
+			lg.setWidth("100px");
+			lg.appendChild(new Listcell(numformat.format(rs.getDouble("buyamount"))));
+			lg.setWidth("100px");			
+			*/
+			//lg.setOpen(false);
+			Label lblapcode = new Label();
+			Label lblapname = new Label();
+			Label lblsumnet = new Label();
+			Label lbltitle = new Label();
+			//Label lbl01 = new Label();
+			//Label lbl02 = new Label();
+			
+			String vlbl1 = rs.getString("apcode");
+			lblapcode.setValue(vlbl1);
+			String vlbl2 = rs.getString("apname");
+			lblapname.setValue(vlbl2);
+			String vlbl3 = numformat.format(rs.getDouble("sumnetamount"));
+			lblsumnet.setValue(vlbl3);
+			lblapcode.setStyle("font-weight:bold; color:#AC2000");
+			
+			lbltitle.setValue(vlbl2+" มูลค่าสั่งซื้อ : "+vlbl3);
+			//lg.setStyle("font-size:10; font-weight:normal; color:#FFFFFF");
+			//lg.setLabel(vlbl1+"/"+vlbl2+"  | | รวมมูลค่าสั่งซื้อ :  "+vlbl3+" | | เดือนนี้ซื้อไปแล้ว  : "+vlbl4);
+			Listcell vcl1 = new Listcell();
+			vcl1.appendChild(lblapcode);
+			vcl1.setTooltiptext("DoubleClick for AP Detail");
+			vcl1.addEventListener("onDoubleClick", new EventListener(){
+					public void onEvent(Event event) throws Exception {
+				
+						newept = expertcode.trim();
+						newapcode= lblapcode.getValue();
+						apdrilldown();
+						// winap.doModal();
+						}
+					});
+			lg.appendChild(vcl1);			
+			Listcell vcl = new Listcell();
+			vcl.appendChild(lbltitle);			
+			lg.appendChild(vcl);		
+							
+			lg.setOpen(false);
+			lg.setCheckable(false);			
+			lsbx1.appendChild(lg);		
+			try{			
+				Connection conn1 = DriverManager.getConnection(vurl, vuser, vpassword);
+				Statement s1 = conn1.createStatement();
+				vQryPOByVendor="exec usp_np_ponotconfirmdaily_vendor_PO '"+expertcode+"','"+vapcode+"',"+vtype+"";
+				System.out.println("POList="+vQryPOByVendor);
+				s1.executeQuery(vQryPOByVendor);			
+				ResultSet rs1 = s1.getResultSet();				
+
+				while(rs1.next()){
+					
+					  Listitem lsitm = new Listitem();
+					/* 
+					  Listcell lc = new Listcell();
+					  lc.setLabel(rs1.getString("docno"));
+					  
+					  lc.addEventListener("onSelect", new EventListener(){
+						  public void onEvent(Event event) throws Exception{
+							  alert("abcd");
+							  lsitm.setCheckable(false);
+						  }
+					  });
+					  lsitm.appendChild(lc);
+					  */
+					  /*
+					  lsitm.addEventListener("onChecked", new EventListener(){
+						  public void onEvent(Event event) throws Exception{
+							  alert("abcd");
+							  lsitm.setCheckable(false);
+						  }
+					  });
+					  */
+					  lsitm.appendChild(new Listcell(rs1.getString("docno")));
+					  lsitm.appendChild(new Listcell(dtmformat.format(rs1.getDate("docdate"))));
+					  //vTotal += rs1.getDouble("netamount");
+					  //numformat.format(vTotal);
+					  lsitm.appendChild(new Listcell(numformat.format(rs1.getDouble("netamount"))));
+					  //lsitm.appendChild(new Listcell(rs1.getString("expertname")));
+					  lsitm.appendChild(new Listcell(rs1.getString("mydescription")));
+					  lsitm.appendChild(new Listcell(rs1.getString("apname")));
+					  lsitm.appendChild(new Listcell(rs1.getString("apcode")));
+					  lsitm.appendChild(new Listcell(rs1.getString("contactname")));
+					  lsitm.appendChild(new Listcell(rs1.getString("email")));
+					  lsitm.appendChild(new Listcell(rs1.getString("creatorcode")));  
+					  Listcell lcdes =new Listcell();
+						 lcdes.setStyle("font-size:normal; color:#0D5AE5;");
+						 lcdes.setLabel(rs1.getString("mydescription1"));
+						 lsitm.appendChild(lcdes);
+					  Listcell lcdt = new Listcell();
+						  lcdt.setLabel("คลิกดูรายละเอียด PO");
+						  lcdt.setStyle("font-size:11px; font-weight:bold; color:#C10000;");
+						  lcdt.addEventListener("onClick", new EventListener(){
+								public void onEvent(Event event) throws Exception {
+								selectPO();							
+								}
+							});	
+					 lsitm.appendChild(lcdt); 
+					 
+					 Label btnAPV = new Label();
+					 //btnAPV.setDisabled(true);
+					 btnAPV.setValue("[คลิก.แนบข้อความ+รูป]");	
+					 btnAPV.setStyle("text-align:center; font-weight:bold; color:#FFFFFF;");
+					  btnAPV.addEventListener("onClick", new EventListener(){
+						  public void onEvent(Event event) throws Exception{
+							  SelectAPmap();						  
+							  
+							  /*
+							  Popup pp = new Popup();
+							  Hbox hb = new Hbox();
+							  Label lb1 = new Label();
+							  Textbox txtb1 = new Textbox();
+							  hb.appendChild(lb1);
+							  hb.appendChild(txtb1);
+							  pp.appendChild(hb);
+							  */
+						  } 
+					  });
+					  
+					  Listcell lc = new Listcell();
+					  lc.setStyle("background-color:#3887E8;");
+					  lc.appendChild(btnAPV);
+					  lsitm.appendChild(lc);
+					  
+					//  lsitm.addEventListener();
+					
+					  lsbx1.appendChild(lsitm);
+					  countPO+=1;
+					}
+				lblpo.setValue(Integer.toString(countPO));
+				if(lsbx1.getItemCount()==0){
+					alert("ไม่พบใบสั่งซื้อรออนุมัติ");
+					// Messagebox.show("ไม่พบใบสั่งซื้อรออนุมัติ","information window", Messagebox.OK,Messagebox.INFORMATION);
+				}
+				rs1.close();
+				s1.close();
+				if(intulevel<=4){
+					gbapv.setVisible(false);
+				}else{
+					gbapv.setVisible(true);
+				}
+				if(cmbsaleteam.getSelectedIndex()>=0){
+					lblteam.setValue("ข้อมูลทีม :"+cmbsaleteam.getSelectedItem().getLabel());					
+				}
+				else
+				{
+					lblteam.setValue("-");
+
+				}
+				
+				if(cmbap.getSelectedIndex()>0){
+					lblvendor.setValue("-เจ้าหนี้ :"+cmbap.getSelectedItem().getLabel());
+				}else{					
+					lblvendor.setValue("-");
+				}
+				//detail.appendChild(lsbx);				
+				//row1.appendChild(detail);
+				//cmbsaleteam.setText("");
+				//cmbap.setText("");				
+				
+			}catch (SQLException e){}		
+			
+			
+			//detail.addEventListener(Events.ON_OPEN, new CustomEventListener("getChildrenForParty.zul", row, args));
+			
+				
+		}
+		rs.close();
+		s.close();
+		
+	}catch (SQLException e){}
+	
+}
+
+public void fapprovepo(){
+	Integer vestatus;
+	Integer n=0;
+	String vqry;
+	String vQryAP;
+	String vQryInPrint;
+	try{
+		Connection conn1 = DriverManager.getConnection(vurl, vuser, vpassword);
+		if(lsbx1.getItemCount()>0){
+			n=lsbx1.getItemCount();
+			for(int x=0;x<n;x++){
+				Listitem lis = new Listitem();
+				lis = lsbx1.getItemAtIndex(x);
+				System.out.println("index x="+x);
+				if(lis.isSelected()== true){				
+					Listcell lc1 = (Listcell) lis.getChildren().get(0);
+					Listcell lc5 = (Listcell) lis.getChildren().get(5);
+					vdocno = lc1.getLabel().trim();
+					vapcode = lc5.getLabel().trim();
+					Statement stm = conn1.createStatement();
+					vqry="exec USP_NP_CheckSendPOEmail '003','"+vapcode+"','"+vdocno+"'";
+					System.out.println("Qry1="+vqry);
+					stm.execute(vqry);
+					ResultSet rst = stm.getResultSet();
+						while(chklist.getItemCount()>0){
+								chklist.removeItemAt(0);
+							}
+						while(rst.next()){
+							Listitem li = new Listitem();
+							li.appendChild(new Listcell(rst.getString("isprinted")));
+							chklist.appendChild(li);					
+						}
+						vestatus = chklist.getItemCount();
+						if(vestatus > 0){
+						try{
+						 Messagebox.show("PO "+vdocno+" มีการสั่งซื้อและส่งอีเมล์หา Vendor แล้ว..คุณต้องการจะส่งอีกครั้งหรือไม่??",
+								    "Question", Messagebox.OK | Messagebox.CANCEL,
+								    Messagebox.QUESTION,
+								        new org.zkoss.zk.ui.event.EventListener(){
+								            public void onEvent(Event e){
+								                if("onOK".equals(e.getName())){
+								                	System.out.println("PO-reSedMail = "+vdocno+" By :"+vuser);
+								                	Statement vap = conn1.createStatement();	
+								                	vQryAP="exec usp_np_ApprovePurchase '"+vdocno+"','"+vuser+"'";
+								                	System.out.print("Qry2="+vQryAP);
+													vap.execute(vQryAP);	// ---------------------
+													Statement vprn = conn1.createStatement();
+													vQryInPrint="exec usp_pr_InsertPrintReOrderAuto_Cat '"+vuser+"','003','','"+vprofit+"','','','"+vapcode+"','"+vdocno+"'";
+													System.out.println("Qry3="+vQryInPrint);
+													vprn.execute(vQryInPrint); // ----------------------
+								                }else if("onCancel".equals(e.getName())){                 
+								            	}
+								        	}
+								       });	
+						}catch(Exception e){
+							e.printStackTrace();
+						}
+						}else {
+						System.out.println("PO-NewsendMai = "+vdocno+ "By :"+vuser);
+						Statement vnAP = conn1.createStatement();
+						vQryAP="exec usp_np_ApprovePurchase '"+vdocno+"','"+vuser+"'";
+						System.out.println("Qry4="+vQryAP);
+						vnAP.execute(vQryAP);
+						Statement vnprn = conn1.createStatement();
+						vQryInPrint="exec usp_pr_InsertPrintReOrderAuto_Cat '"+vuser+"','003','','"+vprofit+"','','','"+vapcode+"','"+vdocno+"'";
+						System.out.println("vQry5="+vQryInPrint);
+						vnprn.execute(vQryInPrint);
+						vnAP.close();
+						vnprn.close();
+					}				
+				}
+			}
+			
+			//lsbx1.setSelectedIndex(-1);
+			//loadVendorPO_List();
+		}
+		alert("อนุมัติ PO ที่เลือกเรียบร้อยแล้ว");	
+		Executions.getCurrent().sendRedirect("approvepo.zul");
+		//Listbox lsbx1 = new Listbox();
+		//Executions.getCurrent();
+			
+	}catch (SQLException e){}
+}
+
+public void fcancelpo(){
+	Integer a;
+	try{
+		if(lsbx.getItemCount()>0){
+			a=lsbx.getItemCount();
+			for(int i=0;i<a;i++){
+				Listitem clpo = new Listitem();
+				clpo = lsbx.getItemAtIndex(i);
+				if(clpo.isSelected()== true){
+					Listcell celpo = (Listcell) clpo.getChildren().get(1);
+					vdocno = celpo.getLabel();
+					vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+					Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+					Statement sst = conn.createStatement();
+					sst.executeQuery("??????????");
+					ResultSet rspo = sst.getResultSet();
+				}
+			}
+		}		 
+		 
+	}catch(SQLException e){}
+}
+
+public void loadsaleteam(){
+	try {
+	   	
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_pr_searchsaleteam_Cat");
+		ResultSet rs = s.getResultSet();
+		while(rs.next()){
+			Comboitem cbxitm = new Comboitem();
+			cbxitm.setLabel(rs.getString("saleteam"));
+			cbxitm.setValue(rs.getString("expertcode"));				
+			cmbsaleteam.appendChild(cbxitm);		
+		}	
+		
+		cmbap.setText("");		
+		
+	} catch (SQLException e){}
+	
+}
+
+public void selectCBX(){
+	String va;
+	va=lblcatman.getValue();
+	//System.out.println("va ="+va);
+	vcatcode =va.trim();
+	try{
+		//System.out.println(vcatcode);		
+		 if(vcatcode.equals("CAT1")){
+		    	vtype="1";
+		    	cxAll.setChecked(false);
+		    	cmbsaleteam.setSelectedIndex(0);
+		    	cmbsaleteam.setDisabled(true);		    	
+		    	cmbsaleteam.setVisible(false);
+		    	lblstm.setValue("CAT1");
+		    	lblstm.setVisible(true);		    	
+		    	expertcode="CAT1";
+		    	loadvendor();
+		    }else if(vcatcode.equals("CAT2")){
+		    	vtype="1";
+		    	cxAll.setChecked(false);
+		    	cmbsaleteam.setSelectedIndex(1);
+		    	cmbsaleteam.setDisabled(true);		    	
+		    	cmbsaleteam.setVisible(false);
+		    	lblstm.setValue("CAT2");
+		    	lblstm.setVisible(true);
+		    	expertcode="CAT2";
+		    	loadvendor();
+		    }else if(vcatcode.equals("CAT3")){
+		    	vtype="1";
+		    	cxAll.setChecked(false);
+		    	cmbsaleteam.setSelectedIndex(2);
+		    	cmbsaleteam.setDisabled(true);		    	
+		    	cmbsaleteam.setVisible(false);
+		    	lblstm.setValue("CAT3");
+		    	lblstm.setVisible(true);
+		    	expertcode="CAT3";
+		    	loadvendor();
+		    }else{
+		    	vtype="2";	    	
+		    	cmbsaleteam.setDisabled(false);
+		    	cmbsaleteam.setVisible(true);
+		    	lblstm.setValue("CATDR");
+		    	lblstm.setVisible(false);
+		    	cxAll.setVisible(true);
+		    }
+	}catch(Exception e){
+		
+	}
+}
+public void viewAllPO(){
+	if(cxAll.isChecked()==true && !vcatcode.endsWith("CAT1") && !vcatcode.equals("CAT2") && !vcatcode.equals("CAT3")){
+		vtype="0";
+	}else if(cxAll.isChecked()==false && !vcatcode.equals("CAT1") && !vcatcode.equals("CAT2") && !vcatcode.equals("CAT3")){
+		vtype="2";
+	}else if(cxAll.isChecked()==false && vcatcode.equals("CAT1") && vcatcode.equals("CAT2") && vcatcode.equals("CAT3")){
+		vtype="1";
+		
+	}else if(intulevel==4){
+		vtype="0";
+	}
+}
+public void loadvendor(){
+	String slitemv;
+	cmbap.getItems().clear();
+	expertcode = cmbsaleteam.getSelectedItem().getValue().toString();
+	try {
+		    
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sap = conn.createStatement();
+			sap.executeQuery("exec usp_pr_searchvendor_Cat '"+expertcode+"'");
+			ResultSet rsap = sap.getResultSet();
+			while(rsap.next()){
+				Comboitem cbap = new Comboitem();
+				cbap.setLabel(rsap.getString("apname"));
+				cbap.setValue(rsap.getString("apcode"));				
+				cmbap.appendChild(cbap);				
+			}
+		} catch (SQLException e){}
+	}
+/*
+public void loadmc(){
+	
+	//mccode = cmbmc.getSelectedItem().getValue();
+	try {
+		    
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sap = conn.createStatement();
+			sap.executeQuery("exec USP_NP_SearchMC");
+			ResultSet rsmc = sap.getResultSet();
+			while(rsmc.next()){
+				Comboitem cbmc = new Comboitem();
+				cbmc.setLabel(rsmc.getString("mc")+" : "+rsmc.getString("mcname"));
+				cbmc.setValue(rsmc.getString("mc"));				
+				cmbmc.appendChild(cbmc);				
+			}
+		} catch (SQLException e){}
+	}
+*/
+public void selectPO(){
+	Listitem vls = new Listitem();
+	vls = lsbx1.getSelectedItem();	
+	Listcell lc1 = (Listcell) vls.getChildren().get(0);
+	vponumber = lc1.getLabel();
+	loadpodetail();
+	showdetail();
+	vls.setSelected(false);
+}
+
+
+	
+public void loadpodetail(){
+	Double vnettotalsub=0.00;
+	Double vnettotal=0.00;
+	Double vVat=0.00;
+	Double vNetVat=0.00;
+	try{
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sd = conn.createStatement();
+		sd.executeQuery("exec USP_NP_PurchaseOrderItemdetails_Cat '"+vponumber+"'");			
+		ResultSet rss = sd.getResultSet();	
+		while(pov.getItemCount()>0){
+			pov.removeItemAt(0);
+		}
+		while(rss.next()){
+			Listitem lipo = new Listitem();
+			lipo.appendChild(new Listcell(rss.getString("itemcode")));
+			lipo.appendChild(new Listcell(rss.getString("itemname")));
+			lipo.appendChild(new Listcell(rss.getString("whcode")));
+			lipo.appendChild(new Listcell(rss.getString("shelfcode")));
+			lipo.appendChild(new Listcell(rss.getString("defbuyunitcode")));
+			lipo.appendChild(new Listcell(numformat.format(rss.getDouble("qty"))));
+			lipo.appendChild(new Listcell(numformat.format(rss.getDouble("price"))));
+			lipo.appendChild(new Listcell(rss.getString("discountword")));
+			lipo.appendChild(new Listcell(numformat.format(rss.getDouble("netamountsub"))));
+			lipo.appendChild(new Listcell(numformat.format(rss.getDouble("gp"))));
+			lipo.appendChild(new Listcell(numformat.format(rss.getDouble("saleprice1"))));
+			lipo.appendChild(new Listcell(rss.getString("mygrade")));
+			lipo.appendChild(new Listcell(rss.getString("departname")));
+			lipo.appendChild(new Listcell(rss.getString("mcname")));
+			lipo.appendChild(new Listcell(rss.getString("buyname")));
+			pov.appendChild(lipo);
+			lblponumber.setValue(rss.getString("docno"));
+			lblpodate.setValue(dtmformat.format(rss.getDate("docdate")));
+			lblapcode.setValue(rss.getString("apcode"));
+			lblapname.setValue(rss.getString("apname"));
+			creditdate.setValue(rss.getString("creditday"));
+			docexpire.setValue(rss.getString("expirecredit"));
+			creditduedate.setValue(dtmformat.format(rss.getDate("duedate")));
+			docexpiredate.setValue(dtmformat.format(rss.getDate("expiredate")));
+			leadtime.setValue(rss.getString("leadtime"));
+			leadtimedate.setValue(dtmformat.format(rss.getDate("leaddate")));
+			epteam.setValue(rss.getString("expertname"));
+			vnettotalsub = rss.getDouble("netamountsub");
+			vnettotal+=vnettotalsub;
+			vVat=(vnettotal*7)/100;
+			System.out.println(vVat);
+			vNetVat=(vnettotal+vVat);
+			lblnetamount.setValue(numformat.format(vnettotal));			
+			lblnetamountvat.setValue(numformat.format(vNetVat));
+		}
+		
+		
+	}catch(SQLException e){}
+}
+public void showhead(){
+	gbhead.setVisible(true);
+	gbdetail.setVisible(false);
+	gbmap.setVisible(false);
+	
+}
+public void showdetail(){
+	gbhead.setVisible(false);
+	gbmap.setVisible(false);
+	gbdetail.setVisible(true);
+}
+public void showAPmap(){
+	gbhead.setVisible(false);
+	gbdetail.setVisible(false);
+	gbmap.setVisible(true);
+}
+public void apdrilldown(){
+
+	application.setAttribute("snapcode", newapcode);
+	application.setAttribute("snept", newept);
+	application.setAttribute("stype", vtype);
+	
+	//System.out.println(viseries);
+	final Window winap = (Window) Executions.createComponents("subapdetail.zul",null, null);    	  		
+	  		winap.setMaximizable(true);
+	  		try{
+				winap.doModal(); 
+	  		}catch(Exception e){
+	  			e.printStackTrace();
+	  		}
+	 
+ }
+
+public void alerte(){
+	alert("อนุมัติ PO ที่เลือกเรียบร้อยแล้ว");	
+	Executions.getCurrent().sendRedirect("approvepo.zul");
+	//Listbox lsbx1 = new Listbox();
+	btnlogout.setVisible(true);
+	
+	//lsbx1.getItems().clear();
+	//loadVendorPO_List();
+}
+/*
+void loavdr(){
+	 try{	
+		
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_np_ponotconfirmdaily '"+newept+"','"+newapcode+"'");			
+		ResultSet rsa = s.getResultSet();		
+		while(rsa.next()){
+			lblapcode1.setValue(rsa.getString("apcode"));
+			lblapname1.setValue(rsa.getString("apname"));
+			lblbyamount.setValue(rsa.getString("buyamount"));
+			lblporemain.setValue(rsa.getString("poremainamount"));
+			lbltotalrv.setValue(rsa.getString("receiveamount"));
+			lblsaleamount.setValue(rsa.getString("saleamount"));
+		}
+		}catch(SQLException e){}
+}
+*/
+
+public void ApproveWithImg(){
+	FileInputStream fis;
+	try{
+		Connection conni = DriverManager.getConnection(vurl, vuser, vpassword);
+		File image = new File("C:/image.jpg");
+	}catch(SQLException ex){}
+}
+
+
+
+//ไปหน้าบันทึกข้อความและแนบไฟล์------------------------------------------------------------
+
+public void SelectAPmap(){
+	String vpono;
+	String vlkimg1;
+	String vlkimg2;
+	String vlkimg3;
+	String imgname1;
+	String imgname2;
+	String imgname3;
+	String vtype1;
+	String vtype2;
+	String vtype3;
+	
+	fmpic1.setSrc("");
+	fmpic2.setSrc("");
+	fmpic3.setSrc("");
+	Listitem li = new Listitem();	
+	// li=lsbx1.getSelectedItem();
+
+	
+	li=lsbx1.getSelectedItem();
+	Listcell cl = (Listcell) li.getChildren().get(0);
+	Listcell cl1 = (Listcell) li.getChildren().get(1);
+	Listcell cl2 = (Listcell) li.getChildren().get(2);
+	
+	try{
+		tdocdate.setValue(cl1.getLabel());
+		tamount.setValue(cl2.getLabel());
+		vpono=cl.getLabel();
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sd = conn.createStatement();
+		sd.executeQuery("exec usp_np_ponotconfirmdaily_desc_PO '"+vpono+"'");			
+		ResultSet rs = sd.getResultSet();
+		while(rs.next()){
+		tdocno.setValue(rs.getString("docno"));
+		//tdocdate.setValue(dtmformat.format(rs.getString("docdate")));
+		tapcode.setValue(rs.getString("apcode"));
+		tapname.setValue(rs.getString("apname"));
+		tdesc.setValue(rs.getString("mydescription1"));
+		vlkimg1=rs.getString("picture1");
+		vlkimg2=rs.getString("picture2");
+		vlkimg3=rs.getString("picture3");
+			if(vlkimg1.length()>0){
+				imgname1=vlkimg1.substring(vlkimg1.lastIndexOf('\\')+1);				
+				
+				System.out.println("ImgName ="+imgname1);
+				if(imgname1.length()>0){
+					vtype1=imgname1.substring(imgname1.lastIndexOf('.')+1);
+					System.out.println(vtype1);
+					if(vtype1.equals("pdf")){
+						fmpic1.setSrc("/images/pdficon.png");
+					}else if(vtype1.equals("doc") || vtype1.equals("docx")){
+						fmpic1.setSrc("/images/docxicon.png");
+					}else if(vtype1.equals("xls") || vtype1.equals("xlsx")){
+						fmpic1.setSrc("/images/excelicon.png");
+					}else{	
+						
+						fmpic1.setSrc("/poimg/"+vpono+"/"+imgname1);
+					}
+				}
+				// fmpic1.setSrc("/poimg/"+vpono+"/"+imgname1);
+				btni1.setDisabled(false);
+				lblfname1.setValue("ชื่อไฟล์แนบ : "+imgname1);
+				
+			}
+			if(vlkimg2.length()>0){				
+				imgname2=vlkimg2.substring(vlkimg2.lastIndexOf('\\')+1);
+				if(imgname2.length()>0){
+					vtype2=imgname2.substring(imgname2.lastIndexOf('.')+1);
+					System.out.println(vtype2);
+					if(vtype2.equals("pdf")){
+						fmpic2.setSrc("/images/pdficon.png");
+					}else
+					if(vtype2.equals("doc") || vtype2.equals("docx")){
+						fmpic2.setSrc("/images/docxicon.png");
+					}else
+					if(vtype2.equals("xls") || vtype2.equals("xlsx")){
+						fmpic2.setSrc("/images/excelicon.png");
+					}else{			
+						fmpic2.setSrc("/poimg/"+vpono+"/"+imgname2);
+					}
+				}
+				//fmpic2.setSrc("/poimg/"+vpono+"/"+imgname2);
+				btni2.setDisabled(false);
+				lblfname2.setValue("ชื่อไฟล์แนบ : "+imgname2);
+			}
+			if(vlkimg3.length()>0){				
+				imgname3=vlkimg3.substring(vlkimg3.lastIndexOf('\\')+1);
+				if(imgname3.length()>0){
+					vtype3=imgname3.substring(imgname3.lastIndexOf('.')+1);
+					if(vtype3.equals("pdf")){
+						fmpic3.setSrc("/images/pdficon.png");
+					}else
+					if(vtype3.equals("doc") || vtype3.equals("docx")){
+						fmpic3.setSrc("/images/docxicon.png");
+					}else
+					if(vtype3.equals("xls") || vtype3.equals("xlsx")){
+						fmpic3.setSrc("/images/excelicon.png");
+					}else{			
+						fmpic3.setSrc("/poimg/"+vpono+"/"+imgname3);
+					}
+				}
+				//fmpic3.setSrc("/poimg/"+vpono+"/"+imgname3);
+				btni3.setDisabled(false);
+				lblfname3.setValue("ชื่อไฟล์แนบ : "+imgname3);
+			}
+		}
+		showAPmap();
+		li.setSelected(false);
+	}catch(SQLException ex){}
+	
+}
+
+	//-------------------------------Upload image-----------------------------------------//
+
+	String podocno;
+	String vpath;
+	String vimg1="";
+	String vimg2="";
+	String vimg3="";
+
+	public void processMedia(Media[] mediaa){	
+		//Executions.getCurrent().getDesktop().setAttribute("org.zkoss.zul.Fileupload.target", BtnUpload);
+
+	try{	
+	
+	byte[] data1;
+	podocno=tdocno.getValue();
+	vpath="/var/lib/tomcat7/webapps/npreorder/poimg/"+podocno+"/";
+	//vpath = "\\\\192.168.0.57\\reorderfile\\"+podocno+"\\";	//เขียนไฟล์ลงใน Ubuntu ผ่าน share folder
+	//System.out.println("vpart="+vpath);
+	// vpath="file://192.168.0.57/reorderfile"+podocno+"/";
+	// vpath="D:/NP/"+podocno+"/";	
+	// vpath="/usr/local/tomcat/webapps/NPreorder5/poimg/"+podocno+"/";
+	// vpath="/usr/local/tomcat/webapps/NPReorder/poimg/"+podocno+"/";
+	
+	
+	if (mediaa != null) {		
+        for (int n = 0; n<mediaa.length; n++) {
+           //if (mediaa[n] instanceof org.zkoss.image.Image) {   
+            	System.out.println("lengntMedea ="+mediaa.length);
+                fmpic1.setContent(mediaa[n]);
+                vimg1 = mediaa[n].getName();  
+                System.out.println(vimg1);                              
+                data1 = mediaa[n].getByteData();  
+                if (data1.length == 0) {
+    				InputStream streamData = mediaa[n].getStreamData();
+    				data1 = IOUtils.toByteArray(streamData);
+    				IOUtils.closeQuietly(streamData);
+    			}
+                lblfname1.setValue(vimg1);
+               // File baseDir = new File(vpath);               
+				boolean ss =(new File(vpath)).mkdir();
+				
+                if (ss) {
+                	FileOutputStream out = new FileOutputStream(vpath+vimg1);
+                    out.write(data1);
+                    out.flush();
+                    out.close();
+					
+                   // String path = Executions.getCurrent().getDesktop().getWebApp().getRealPath("/");
+                    //Media media = event.getMedia();
+                   // Files.copy(new File(vpath + mediaa.getName()), mediaa.getStreamData());    
+			       }else {
+                	FileOutputStream out = new FileOutputStream(vpath+vimg1);
+                    out.write(data1);
+                    out.flush();
+                    out.close();
+                }
+              /*  
+            } else {
+                Messagebox.show("Not an image: " + mediaa[n], "Error",
+                        Messagebox.OK, Messagebox.ERROR);
+                break; //not to show too many errors
+            }
+           */
+        }         
+      }
+	}
+	catch(Exception e){}
+	}
+// Executions.getCurrent().getDesktop().setAttribute("org.zkoss.zul.Fileupload.target", uploadBtn2);
+public void processMedia2(Media[] mediab){	
+	try{
+	byte[] data2;
+	podocno=tdocno.getValue();
+	vpath="/var/lib/tomcat7/webapps/npreorder/poimg/"+podocno+"/";
+	// vpath = "\\\\192.168.0.57\\reorderfile\\"+podocno+"\\";
+	//vpath = "N:\\"+podocno+"\\";
+	// vpath="file://192.168.0.57/reorderfile/"+podocno+"/";
+	// vpath="D:/NP/"+podocno+"/";
+	// vpath="/usr/local/tomcat/webapps/NPreorder5/poimg/"+podocno+"/";
+	//vpath="/usr/local/tomcat/webapps/NPReorder/poimg/"+podocno+"/";
+		
+	if (mediab != null) {		
+        for (int i = 0; i<mediab.length; i++) {
+           
+        	// byte[] binaryData = mediab[i].getByteData();
+			
+        	// if (mediab[i] instanceof org.zkoss.image.Image) {            	
+            	fmpic2.setContent(mediab[i]);
+                vimg2 = mediab[i].getName();  
+                System.out.println(vimg2);
+                data2 = mediab[i].getByteData(); 
+                // byte[] uploadedfile = IOUtils.toByteArray(mediab[i].getStreamData()); 
+                if (data2.length == 0) {
+    				InputStream streamData = mediab[i].getStreamData();
+    				data2 = IOUtils.toByteArray(streamData);
+    				IOUtils.closeQuietly(streamData);
+    			}
+                lblfname2.setValue(vimg2);
+                File baseDir = new File(vpath);               
+				boolean ss =(new File(vpath)).mkdir();		
+				
+                if (ss) {
+                	FileOutputStream out2 = new FileOutputStream(vpath+vimg2);
+                    out2.write(data2);
+                    out2.flush();
+                    out2.close();                   
+                  
+                }else {
+                	FileOutputStream out2 = new FileOutputStream(vpath+vimg2);
+                    out2.write(data2);
+                    out2.flush();
+                    out2.close();
+                }
+               /* 
+               public void onUpload$fileupload(UploadEvent event) throws InterruptedException, IOException {
+					Media media = event.getMedia();
+					
+					byte[] binaryData = media.getByteData();
+					if (binaryData.length == 0) {
+						InputStream streamData = media.getStreamData();
+						binaryData = IOUtils.toByteArray(streamData);
+						IOUtils.closeQuietly(streamData);
+					}
+					// ...	
+				}
+           */
+        }    
+        
+    }
+	}catch(Exception e){}
+	}
+// Executions.getCurrent().getDesktop().setAttribute("org.zkoss.zul.Fileupload.target", uploadBtn3);
+public void processMedia3(Media[] mediac){	
+	
+	byte[] data3;
+	podocno=tdocno.getValue();
+	vpath="/var/lib/tomcat7/webapps/npreorder/poimg/"+podocno+"/";
+	// vpath = "\\\\192.168.0.57\\reorderfile\\"+podocno+"\\";
+	// vpath = "N:\\"+podocno+"\\";
+	//vpath="file://192.168.0.57/reorderfile"+podocno+"/";
+	//vpath="ubuntu2://var//www//imgreorder//"+podocno+"//";
+	//vpath="D:/NP/"+podocno+"/";
+	//vpath="/usr/local/tomcat/webapps/NPreorder5/poimg/"+podocno+"/";
+	// vpath="/usr/local/tomcat/webapps/NPReorder/poimg/"+podocno+"/";
+	try{
+	if (mediac != null) {		
+        for (int i = 0; i<mediac.length; i++) {
+            //if (mediac[i] instanceof org.zkoss.image.Image) {            	
+                fmpic3.setContent(mediac[i]);
+                vimg3 = mediac[i].getName();  
+                System.out.println("after"+vimg3);
+                data3 = mediac[i].getByteData();  
+                if (data3.length == 0) {
+    				InputStream streamData = mediac[i].getStreamData();
+    				data3 = IOUtils.toByteArray(streamData);
+    				IOUtils.closeQuietly(streamData);
+    			}
+                lblfname3.setValue(vimg3);
+                File baseDir = new File(vpath);               
+				boolean ss =(new File(vpath)).mkdir();
+				
+                if (ss) {
+                	FileOutputStream out3 = new FileOutputStream(vpath+vimg3);
+                    out3.write(data3);
+                    out3.flush();
+                    out3.close();
+
+                  
+                }else {
+                	FileOutputStream out3 = new FileOutputStream(vpath+vimg3);
+                    out3.write(data3);
+                    out3.flush();
+                    out3.close();
+                }
+               /* 
+            } else {
+                Messagebox.show("Not an image: " + mediac[i], "Error",
+                        Messagebox.OK, Messagebox.ERROR);
+                break; //not to show too many errors
+            }
+            */
+        }    
+        
+    }
+	}catch(Exception e){
+		e.printStackTrace();
+	}
+	}
+public void Savepofile(){
+	String iDocno;
+	String iApcode;
+	String iDescription;
+	String iFile1="";
+	String iFile2="";
+	String iFile3="";
+	String vQry;
+	String vlink;
+	vlink = "\\\\192.168.0.161\\reorderfile\\";
+	try{
+		/* if(tdesc.getValue().length()>0 && vimg1.length()>0){ */
+		iDocno=tdocno.getValue();
+		iApcode=tapcode.getValue();
+		iDescription=tdesc.getValue();
+		System.out.println(vimg1);
+		System.out.println(vimg2);
+		System.out.println(vimg3);
+		if(vimg1.equals("")||vimg1.equals(null)||vimg1.length()==0){
+			iFile1="";
+		}else{
+			iFile1=vlink.concat(iDocno.concat("\\".concat(vimg1)));
+		}
+		if(vimg2.equals("")||vimg2.equals(null)||vimg2.length()==0){
+			iFile2="";
+		}else{
+			iFile2=vlink.concat(iDocno.concat("\\".concat(vimg2)));
+		}
+		if(vimg3.equals("")||vimg3.equals(null)||vimg3.length()==0){
+			iFile3="";
+		}else{
+			iFile3=vlink.concat(iDocno.concat("\\".concat(vimg3)));
+		}
+		
+		/* 
+		iFile1=. .concat(vimg1);
+		System.out.println("Path 1="+iFile1);
+		System.out.println("Path 2="+iFile2);
+		System.out.println("Path 3="+iFile3);
+		iFile2=vpath.concat(vimg2);
+		iFile3=vpath.concat(vimg3);
+		*/
+		
+		Connection connectdb = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement st = connectdb.createStatement();
+		vQry="exec USP_PR_UpdatePOSendMail '"+iDocno+"','"+iApcode+"','"+iDescription+"','"+iFile1+"','"+iFile2+"','"+iFile3+"','"+vuser+"'";
+		System.out.println(vQry);
+		st.execute(vQry);
+		st.close();
+		connectdb.close();
+		alert("บันทึกข้อมูลเรียบร้อยแล้ว");
+		showhead();
+		loadVendorPO_List();
+		/*
+		} else {
+			alert("คุณไม่ได้บันทึกข้อความหรือเพิ่มไฟล์ใดๆ ไม่สามารถบันทึกข้อมูลได้ กรุณาเลือกปุ่ม [ปิดหน้านี้]");
+		}
+		*/
+	}catch(SQLException ex){}
+}
+void vdelimg1(){
+	try{
+		Messagebox.show("คุณต้องการลบรูบ 1 ออก?",
+			    "Question", Messagebox.OK | Messagebox.CANCEL,
+			    Messagebox.QUESTION,
+			        new org.zkoss.zk.ui.event.EventListener(){
+			            public void onEvent(Event e){
+			                if("onOK".equals(e.getName())){
+			                	fmpic1.setSrc("");
+			                	vimg1="";
+			                	lblfname1.setValue("");
+			                	alert("กรุณาบันทึกข้อมูลเมื่อคุณลบรูปเสร็จแล้ว");
+			                }else if("onCancel".equals(e.getName())){                 
+			            	}
+			        	}
+			       }
+			    );
+		
+	}catch(Exception e){}
+}
+void vdelimg2(){
+	try{
+		Messagebox.show("คุณต้องการลบรูบ 2 ออก?",
+			    "Question", Messagebox.OK | Messagebox.CANCEL,
+			    Messagebox.QUESTION,
+			        new org.zkoss.zk.ui.event.EventListener(){
+			            public void onEvent(Event e){
+			                if("onOK".equals(e.getName())){
+			                	fmpic2.setSrc("");
+			                	vimg2="";
+			                	lblfname2.setValue("");
+			                	alert("กรุณาบันทึกข้อมูลเมื่อคุณลบรูปเสร็จแล้ว");
+			                }else if("onCancel".equals(e.getName())){                 
+			            	}
+			        	}
+			       }
+			    );
+		
+	}catch(Exception e){}
+	
+}
+void vdelimg3(){
+	try{
+		Messagebox.show("คุณต้องการลบรูบ 3 ออก?",
+			    "Question", Messagebox.OK | Messagebox.CANCEL,
+			    Messagebox.QUESTION,
+			        new org.zkoss.zk.ui.event.EventListener(){
+			            public void onEvent(Event e){
+			                if("onOK".equals(e.getName())){
+			                	fmpic3.setSrc("");
+			                	vimg3="";
+			                	lblfname3.setValue("");
+			                	alert("กรุณาบันทึกข้อมูลเมื่อคุณลบรูปเสร็จแล้ว");
+			                }else if("onCancel".equals(e.getName())){                 
+			            	}
+			        	}
+			       }
+			    );
+		
+	}catch(Exception e){}
+	
+}
+	]]>
+</zscript>
+
+<div align="right">
+<label value="Update 13.9.2012" style="font-size:6px;"/>
+</div>
+</window>
+</zk>

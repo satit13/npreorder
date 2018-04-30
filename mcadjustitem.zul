@@ -1,0 +1,156 @@
+<?page title="MC Adjust items" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="MC Adjust items" border="normal" onCreate="mcview();">
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="panuvich";
+vpassword="thaikom$$";
+Connection vConnectdb;
+
+//---------------
+String pvrofit;
+String pvexpertcode;
+String pvsectioncode;
+String pvdepartmentcode;
+String pvdocno;
+//---------------
+
+
+//set format
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+// set Class connect SQL jdbc
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+public void publicconnection(){
+	if(vuser !="" ||  vuser!=null){
+		try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		vConnectdb =  DriverManager.getConnection(vurl, vuser, vpassword);
+		//System.out.println("connect db");
+		}catch(SQLException e){}
+	}
+}
+
+public void mcview(){
+	try{
+		//publicconnection();
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		vConnectdb = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = vConnectdb.createStatement();
+		s.executeQuery("exec usp_pr_StockRequestDaily 'S01',0,'ept02','','',''" );
+		ResultSet rs = s.getResultSet();
+		
+		while(mclis.getItemCount()>0){
+			mclis.removeItemAt(0);
+		}
+		while(rs.next()){
+
+			Listgroup lg = new Listgroup();
+			lg.appendChild(new Listcell("เจ้าหนี้ :"));
+			lg.appendChild(new Listcell(rs.getString("apcode")));
+			lg.appendChild(new Listcell(" : "));
+			lg.appendChild(new Listcell(rs.getString("apname")));
+			lg.appendChild(new Listcell(" ล่าสุดซื้อกับเจ้าหนี้  :"));
+			lg.appendChild(new Listcell(rs.getString("lastapname")));
+			//lg.appendChild(new Listcell(rs.getString(" มูลค่าประมาณการซื้อของเจ้าหนี้ : ")));
+			//lg.appendChild(new Listcell(Double.toString(rs.getDouble("sumnetamount"))));
+			/*
+			//lg.setOpen(false);
+			String vlbl1 = rs.getString("apcode");
+			String vlbl2 = rs.getString("apname");
+			String vlbl3 = Double.toString(rs.getDouble("sumnetamount"));
+			lg.setLabel(vlbl1+"  : ชื่อ Vendor :  "+vlbl2+"  : มูลค่าซื้อสุทธิ :  "+vlbl3);
+			*/
+		
+			lg.setOpen(false);
+			lg.setCheckable(false);			
+			mclis.appendChild(lg);				
+	
+			Listitem mli = new Listitem();
+			mli.appendChild(new Listcell(rs.getString("itemcode")));
+			mli.appendChild(new Listcell(rs.getString("itemname")));
+			mli.appendChild(new Listcell(rs.getString("adjustqty1")));
+			// textbox adjust
+			Textbox mctbx = new Textbox();
+			mctbx.setStyle("font-weight:bold; font-size:14px; color:red;");
+			mctbx.setWidth("25px");
+			Button btnadjust = new Button();
+			btnadjust.setLabel("Adjust");
+			Button btnreject = new Button();
+			btnreject.setLabel("Reject");
+			Listcell mcll = new Listcell();
+			mcll.appendChild(mctbx);
+			mcll.appendChild(btnadjust);
+			mcll.appendChild(btnreject);
+			mli.appendChild(mcll);	
+			
+			mli.appendChild(new Listcell(rs.getString("unitcode")));
+			mli.appendChild(new Listcell(rs.getString("grade")));
+			mli.appendChild(new Listcell(rs.getString("reddot")));
+			mli.appendChild(new Listcell(rs.getString("orderpoint")));
+			mli.appendChild(new Listcell(rs.getString("stockmin")));
+			mli.appendChild(new Listcell(rs.getString("stockmax")));
+			mli.appendChild(new Listcell(rs.getString("saleprice1")));
+			mli.appendChild(new Listcell(rs.getString("baseprice")));
+			mli.appendChild(new Listcell(rs.getString("gp")));
+			mli.appendChild(new Listcell(rs.getString("stockqty")));
+			mclis.appendChild(mli);			
+			
+		}
+		
+	}catch(SQLException e){ }
+}
+
+	]]>
+</zscript>
+<listbox id="mclis">
+	<listhead>
+	<listheader label="a" />
+	<listheader label="b" />
+	<listheader label="c" />
+	<listheader label="d" />
+	<listheader label="e" />
+	<listheader label="f" />
+	<listheader label="g" />
+	<listheader label="v" />
+	<listheader label="h" />
+	<listheader label="i" />
+	<listheader label="j" />
+	<listheader label="k" />
+	<listheader label="l" />
+	<listheader label="m" />	
+</listhead>
+</listbox>
+
+</window>
+</zk>

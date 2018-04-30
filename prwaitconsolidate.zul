@@ -1,0 +1,20 @@
+<?page title="Wait Consolidate PR" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="new page title" border="normal">
+<label value="รายการ PR ที่รอส่งข้อมูลให้แผนกจัดซื้อ โปรดพิจารณาก่อนส่งข้อมูล เพราะจะไม่สามารถแก้ไขได้หลังจากทำรายการ" style="background-color: red; font-size:15px; font-weight:bold;" />
+<listbox id="prwaitcon">
+	<listhead>
+		<listheader label="เลขที่" sort="auto" />
+		<listheader label="วันที่" sort="auto" />
+		<listheader label="คำอธิบาย" sort="auto" />
+		<listheader label="รหัสผู้สร้าง" sort="auto" />
+		<listheader label="วันที่สร้าง" sort="auto" />
+		<listheader label="รหัสพนักงาน" sort="auto" />
+		<listheader label="ชื่อพนักงาน" sort="auto" />		
+		<listheader label="สถานะ" />	
+	</listhead>	
+</listbox>
+<button label="ส่งข้อมูล.." style="font-size: 20px; color: #00769A; font-weigth: bold;" onClick="" width="280" height="30px"/>
+<button label="Exit" style="font-size: 20px; color: #00769A; font-weigth: bold;" onClick="" width="280" height="30px"/>
+</window>
+</zk>

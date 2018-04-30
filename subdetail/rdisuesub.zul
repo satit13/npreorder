@@ -1,0 +1,167 @@
+<?page title="Reorder Tracking Detail" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="Reorder Tracking Detail" border="normal" id="winisub" onCreate="viewisue()">
+<label id="lblscode" value="${applicationScope['aisscode']}" visible="false" />
+<groupbox>
+<grid>
+		<columns>
+			<column label=""/>
+			<column label=""/>
+		</columns>
+		<rows>
+			<row><hbox><label id="lblrid" visible="false"/><label value="หัวข้อ :" /></hbox><label id="lbltt" style="font-weight:bold; color:red;"/> 	
+			</row>
+			<row><label value="รายละเอียด :"/><label id="lbldt" />
+			</row>
+			<row><label value="ผู้แจ้ง :"/><hbox><label id="lbluser" /><label value=" วันที่  : "/><label id="lblpdate" /></hbox> 
+			</row>
+			
+		</rows>
+	</grid>
+</groupbox>
+<groupbox>
+<listbox id="viewis">
+	<listhead>
+		<listheader label="" sort="auto" />
+		<listheader label="" sort="auto" />
+</listhead>
+</listbox>
+ </groupbox>
+ <groupbox width="500px">
+<grid >
+		<columns>
+			<column label="บันทึกการแก้ไข"/>
+			
+		</columns>
+		<rows>
+			<row><textbox id="txtqt" multiline="true" rows="5" cols="78"/>
+			</row>
+			<row><hbox><button label="ส่งข้อมูล" onClick="takemsgsub();" />
+			<button label="ยกเลิก" onClick="clrtxtq();" />
+			<button label="กลับ" onClick="wllbeback()" />
+			</hbox></row>
+		</rows>
+	</grid>
+</groupbox>
+<zscript>
+<![CDATA[
+         import java.io.*;
+         import java.sql.*;
+         import java.lang.*;
+         import javax.servlet.http.Cookie;
+         import javax.servlet.http.HttpServletRequest;
+         import javax.servlet.http.HttpServletResponse; 
+         import java.text.SimpleDateFormat;
+         String vserver;
+         String vdbname;
+         String vurl;
+         String vuser;
+         String vpassword;
+         String vprofit;
+         String vtitle;
+         String vmsg;
+         String vid;
+         String vissueid;
+         Connection vconn;
+         vserver="//192.168.0.7:1433;";
+         vdbname="bcnp";
+         vuser="panuvich";
+         vpassword="thaikom$$";
+         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+         
+         SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+         
+         public void checkuserlogin(){
+        	 try{
+        			Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+        			for (Cookie cookie : ck) {
+        				if (cookie.getName().equals("cuser")) {
+        					vuser =cookie.getValue();
+        				}
+        			}
+        			for (Cookie ckps : ck) {
+        				if (ckps.getName().equals("cpass")) {
+        					vpassword =ckps.getValue();
+        				}
+        			}
+        			for (Cookie ckpf : ck) {
+        				if (ckpf.getName().equals("ckprofitcode")) {
+        					vprofit = ckpf.getValue();
+        				}
+        			}
+        			if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+        				//System.out.println("cookie = "+cookies);
+        				Executions.sendRedirect("index.zul");		
+        			} 
+        			
+        			}catch (Exception e){}
+     	}
+         public void publicconnection(){
+     		if(vuser !="" ||  vuser!=null){
+     			try{
+     			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+     			vconn =  DriverManager.getConnection(vurl, vuser, vpassword);
+     			//System.out.println("connect db");
+     			}catch(SQLException e){}
+     		}
+     	}
+         public void viewisue(){
+        	 vissueid=lblscode.getValue();
+        	 try{
+        		 publicconnection();
+        		 Statement vs = vconn.createStatement();
+        		 vs.executeQuery("Exec USP_NP_ViewIssueDetail '"+vissueid+"'");
+        		 ResultSet rs = vs.getResultSet();
+        		 while(viewis.getItemCount()>0){
+        			 viewis.removeItemAt(0);
+        		 }
+        		 while(rs.next()){
+        			 vid=rs.getString("iNumber");
+        			 lblrid.setValue(vid);
+        			 lbltt.setValue(rs.getString("Title"));
+        			 lbldt.setValue(rs.getString("Detail"));
+        			 lblpdate.setValue(dtmformat.format(rs.getDate("Postdate")));
+        			 lbluser.setValue(rs.getString("userpost"));        			
+        			 try{
+        				 publicconnection();
+        				 Statement ss = vconn.createStatement();
+        				 ss.executeQuery("Exec USP_NP_ViewIssueSub '"+vid+"'");
+        				 ResultSet vrs = ss.getResultSet();
+        				 while(vrs.next()){
+        					 Listitem li = new Listitem();
+        					 li.appendChild(new Listcell(vrs.getString("id")));
+        					 li.appendChild(new Listcell(vrs.getString("rddetail")));
+        					 li.appendChild(new Listcell(vrs.getString("updateby")));
+        					 li.appendChild(new Listcell(dtmformat.format(vrs.getDate("lasteditdate"))));
+        					 viewis.appendChild(li);
+        				 }
+        			 }catch(SQLException e){}
+        		 }
+        	 }catch(SQLException e){}
+         }
+         //บันทึกการแก้ไข
+         public void takemsgsub(){
+        	 	vmsg = txtqt.getValue();
+      	   	   try{
+      		   publicconnection();
+      		   Statement s = vconn.createStatement();
+      		   s.execute("exec USP_NP_ReorderIssueSub '"+vissueid+"','"+vmsg+"','"+vuser+"'");
+      		   alert("ส่งข้อมูลเรียบร้อยแล้ว");
+      		 	txtqt.setValue("");
+      	   }catch(SQLException e){}
+      	   
+         }
+         
+         void clrtxtq(){
+        	 txtqt.setValue("");        	
+        	 
+         }
+         void wllbeback(){
+        	 final Window winitm = (Window) Executions.createComponents("subdetail/issuelist.zul",null, null);
+        	 winisub.setVisible(false);
+        	
+         }
+	]]>
+</zscript>
+</window>
+</zk>

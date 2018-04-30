@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="rpitemorderpoint" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="786" leftMargin="28" rightMargin="28" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[exec usp_pr_itemreorderbyorderpoint 'EPT01','','']]>
+	</queryString>
+	<field name="itemcode" class="java.lang.String"/>
+	<field name="itemname" class="java.lang.String"/>
+	<field name="defstkunitcode" class="java.lang.String"/>
+	<field name="orderpoint" class="java.math.BigDecimal"/>
+	<field name="stockmax" class="java.math.BigDecimal"/>
+	<field name="stockmin" class="java.math.BigDecimal"/>
+	<field name="sumqty" class="java.math.BigDecimal"/>
+	<field name="departcode" class="java.lang.String"/>
+	<field name="departname" class="java.lang.String"/>
+	<field name="defbuyunitcode" class="java.lang.String"/>
+	<field name="stockqty" class="java.math.BigDecimal"/>
+	<field name="remainoutqty" class="java.math.BigDecimal"/>
+	<field name="remaininqty" class="java.math.BigDecimal"/>
+	<field name="reserveqty" class="java.math.BigDecimal"/>
+	<field name="expertcode" class="java.lang.String"/>
+	<field name="expertname" class="java.lang.String"/>
+	<field name="section" class="java.lang.String"/>
+	<field name="sectionname" class="java.lang.String"/>
+	<field name="remainqtyS01" class="java.math.BigDecimal"/>
+	<field name="remainqtyS02" class="java.math.BigDecimal"/>
+	<field name="remainoutqtyS01" class="java.math.BigDecimal"/>
+	<field name="remainoutqtyS02" class="java.math.BigDecimal"/>
+	<field name="remaininqtyS01" class="java.math.BigDecimal"/>
+	<field name="remaininqtyS02" class="java.math.BigDecimal"/>
+	<field name="reserveqtyS01" class="java.math.BigDecimal"/>
+	<field name="reserveqtyS02" class="java.math.BigDecimal"/>
+	<field name="grade" class="java.lang.String"/>
+	<field name="sumsaleqty3monthagos01" class="java.math.BigDecimal"/>
+	<field name="sumsaleqty3monthagos02" class="java.math.BigDecimal"/>
+	<field name="countbills01" class="java.lang.Integer"/>
+	<field name="countbills02" class="java.lang.Integer"/>
+	<field name="sumcashsaleqty3monthagos01" class="java.math.BigDecimal"/>
+	<field name="sumcashsaleqty3monthagos02" class="java.math.BigDecimal"/>
+	<field name="countcashbills01" class="java.lang.Integer"/>
+	<field name="countcashbills02" class="java.lang.Integer"/>
+	<field name="itemstatus" class="java.lang.String"/>
+	<field name="reddot" class="java.lang.String"/>
+	<field name="saleprice1" class="java.math.BigDecimal"/>
+	<field name="baseprice" class="java.math.BigDecimal"/>
+	<field name="orderqty" class="java.math.BigDecimal"/>
+	<group name="departname">
+		<groupExpression><![CDATA[$F{departname}]]></groupExpression>
+	</group>
+	<group name="departgroup">
+		<groupExpression><![CDATA[$F{departname}]]></groupExpression>
+		<groupHeader>
+			<band height="18">
+				<textField>
+					<reportElement x="0" y="0" width="208" height="14"/>
+					<textElement>
+						<font fontName="Tahoma" size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression class="java.lang.String"><![CDATA[$F{departname}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="1" y="15" width="208" height="1"/>
+				</line>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="33">
+			<staticText>
+				<reportElement x="229" y="0" width="425" height="28"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[รายงานสินค้าถึงจุดสั่งซื้อ (เฉพาะสินค้าเกรด A และ B)]]></text>
+			</staticText>
+			<rectangle radius="10">
+				<reportElement x="3" y="5" width="205" height="25"/>
+				<graphicElement>
+					<pen lineWidth="0.25"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="3" y="7" width="22" height="20"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma"/>
+				</textElement>
+				<text><![CDATA[ทีม :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="27" y="7" width="181" height="20"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{expertname}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="762" y="14" width="10" height="12"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="746" y="14" width="18" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="771" y="14" width="13" height="12"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="721" y="14" width="26" height="12"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[หน้า]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="20" splitType="Stretch">
+			<rectangle>
+				<reportElement x="3" y="0" width="783" height="15" backcolor="#CCCCCC"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="0" y="0" width="58" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[รหัสสินค้า]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="59" y="0" width="158" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[ชื่อสินค้า]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="631" y="0" width="25" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[Min]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="686" y="0" width="28" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[ควรซื้อ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="762" y="0" width="24" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[IsReddot]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="747" y="0" width="16" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[เกรด]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="714" y="0" width="34" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[หน่วยนับซื้อ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="218" y="0" width="29" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[คงเหลือทั้งหมด]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="604" y="0" width="25" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[Max]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="17" width="784" height="1"/>
+			</line>
+			<staticText>
+				<reportElement x="658" y="0" width="25" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[จุดสั่งซื้อ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="366" y="0" width="34" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5" isBold="false"/>
+				</textElement>
+				<text><![CDATA[ยอดขาย3เดือนS01-รวม]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="0" width="35" height="15"/>
+				<textElement textAlignment="Center">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ยอดขายเงินสด3เดือนS01]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="454" y="0" width="33" height="15"/>
+				<textElement textAlignment="Center">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ยอดขายเงินสด3เดือนS02]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="0" width="28" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ความถี่(บิล) S01]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="487" y="0" width="26" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ความถี่(บิล) S02]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="513" y="0" width="34" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ยอดขาย3เดือนS02-รวม]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="399" y="0" width="27" height="15"/>
+				<box>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ความถี่(บิล)S01-รวม]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="546" y="0" width="30" height="15"/>
+				<box>
+					<pen lineWidth="0.0"/>
+					<topPen lineWidth="0.0"/>
+					<leftPen lineWidth="0.0"/>
+					<bottomPen lineWidth="0.0"/>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[ความถี่(บิล) S02-รวม]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="277" y="0" width="28" height="15"/>
+				<box leftPadding="0">
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[  คงเหลือ S01]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="575" y="0" width="30" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[ราคาขาย]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="425" y="0" width="30" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="5"/>
+				</textElement>
+				<text><![CDATA[  คงเหลือ   S02]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="247" y="0" width="30" height="15"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<text><![CDATA[หน่วยนับ]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="16" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="2" width="58" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{itemcode}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="631" y="2" width="25" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{stockmin}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="686" y="2" width="25" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{orderqty}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="762" y="2" width="24" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{reddot}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="747" y="2" width="16" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{grade}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="714" y="2" width="34" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{defbuyunitcode}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="218" y="2" width="30" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sumqty}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="604" y="2" width="25" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{stockmax}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="59" y="2" width="158" height="13"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{itemname}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="658" y="2" width="25" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{orderpoint}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="364" y="2" width="34" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sumsaleqty3monthagos01}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="304" y="2" width="35" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sumcashsaleqty3monthagos01}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="455" y="2" width="32" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sumcashsaleqty3monthagos02}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="339" y="2" width="26" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{countcashbills01}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="487" y="2" width="26" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{countcashbills02}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="513" y="2" width="34" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{sumsaleqty3monthagos02}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="398" y="2" width="26" height="13"/>
+				<box>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{countbills01}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="546" y="2" width="30" height="13"/>
+				<box>
+					<rightPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$F{countbills02}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="277" y="2" width="28" height="13"/>
+				<box>
+					<leftPen lineWidth="0.5"/>
+				</box>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{remainqtyS01}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="575" y="2" width="30" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{remainqtyS02}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="423" y="2" width="33" height="13"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{saleprice1}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="247" y="2" width="30" height="13"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Tahoma" size="6"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{defstkunitcode}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<lastPageFooter>
+		<band height="65">
+			<rectangle>
+				<reportElement x="629" y="3" width="155" height="60"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle>
+				<reportElement x="3" y="3" width="626" height="60"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="642" y="21" width="130" height="13"/>
+				<textElement>
+					<font fontName="Tahoma" size="8"/>
+				</textElement>
+				<text><![CDATA[ลงชื่อ .................................]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="667" y="34" width="105" height="13"/>
+				<textElement>
+					<font fontName="Tahoma" size="8"/>
+				</textElement>
+				<text><![CDATA[Section ผู้ตรวจสอบ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="643" y="47" width="129" height="13"/>
+				<textElement>
+					<font fontName="Tahoma" size="8"/>
+				</textElement>
+				<text><![CDATA[วันที่ ........../......../...........]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="5" width="58" height="20"/>
+				<textElement/>
+				<text><![CDATA[หมายเหตุ.]]></text>
+			</staticText>
+		</band>
+	</lastPageFooter>
+	<summary>
+		<band height="4" splitType="Stretch"/>
+	</summary>
+</jasperReport>

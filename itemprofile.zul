@@ -1,0 +1,367 @@
+<?page title="Item Profile" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="ข้อมูลสินค้า" border="normal" closable="true" onCreate="loadMCdetail(); shelfinfos();">
+<label id="lbltfitmcode" value="${applicationScope['tfItemcode']}" visible="false" />
+<tabbox>
+	<tabs>
+		<tab label="รายละเอียดสินค้า" />
+		<tab label="รายการเอกสาร" >
+			<attribute name="onClick">
+				vShowPRstk();
+			</attribute>
+		</tab>
+	</tabs>
+	<tabpanels>
+		<tabpanel>
+<groupbox id="gb02" width="810px">
+<image src="/images/p05.png" />
+  <grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right"/>
+			<column label="" width="680px" align="left" />
+		</columns>
+		<rows>
+			<row><label value="รหัสสินค้า :" /><label id="lblitemcode" style="font-weight:bold; color:#EC4E00;"/>	
+			</row>
+			<row><label value="ชื่อสินค้า : " /><label id="lblitemname" style="font-weight:bold; color:#EC4E00;"/>
+			</row>
+		</rows>
+	</grid>
+	<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right" />
+			<column label="" width="280px" align="left" />
+			<column label="" width="120px" align="right"/>
+			<column label="" width="280px" align="left" />
+		</columns>
+		<rows>
+			<row><label value="จำนวนขอซื้อ :" /><label id="lblqty" style="font-weight:bold; color:#EC4E00;"/><label value="หน่วยนับซื้อ : " /><label id="lbldefbuyunitcode" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="Sale Division Adjust"/><label id="lblsdadj" style="font-weight:bold; color:#EC4E00;"/><label value="Store Manager Adjust" /><label id="lblsgmadj" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="หน่วยนับสต็อก :" /><label id="lbldefstkunitcode" style="font-weight:bold; color:blue;"/><label value="หน่วยนับหลัก : " /><label id="lblunitcode" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="จำนวนวันที่ต้องการ :" /><hbox><label id="lblwantday" style="font-weight:bold; color:#EC4E00;"/><label value="วัน" style="font-weight:normal; color:blue"/></hbox><label value="วันที่ต้องการ : " /><label id="lblwantdate" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="ราคาซื้อล่าสุด :" /><label id="lbllastbuyprice" style="font-weight:bold; color:blue;" /><label value="สถานะสินค้า : " /><label id="lblitemstatus" style="font-weight:bold; color:blue;"/>
+			</row>	
+			<row><label value="ราคาซื้อสุทธิล่าสุด  :" /><label id="lbllastnetbuyprice" style="font-weight:bold; color:blue;"/><label value="ล่าสุดซื้อกับเจ้าหนี้ : " /><label id="lbllastapname" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="ส่วนลดล่าสุด : " /><hbox><label id="lbllastdiscount" style="font-weight:bold; color:blue;"/><label value=" บาท" /></hbox><label value="ส่วนลดล่าสุด % :"/><label id="lbllastdiscountword" style="font-weight:bold; color:blue;"/>
+			</row>	
+			<row><label value="รับเข้าล่าสุด : "/><label id="lblrvno" style="font-weight:bold; color:blue;"/><label value="วันที่ขายล่าสุด : " /><label id="lbllastsaledate"  style="font-weight:bold; color:blue;"/>
+			</row>	
+			<row><label value="ความถี่ขาย S01(บิล) : " /><label id="lblcountbills01"  style="font-weight:bold; color:blue;"/><label value="ความถี่ขาย S02 (บิล) :"/><label id="lblcountbills02"  style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="เกรด :" /><label id="lblgrade" style="font-weight:bold; color:blue;" tooltip="graddescription"/><label value="สินค้าขายดี : " /><label id="lblreddot" style="font-weight:bold; color:blue;" tooltip="redotdescription"/>
+			</row>
+			<row><label value="จุดที่ควรสั่งซื้อ :" /><label id="lblorderpoint" style="font-weight:bold; color:blue;"/><label value="ราคาขายสด : " /><label id="lblsaleprice" style="font-weight:bold; color:blue;"/>
+			</row>			
+			<row><label value="จุดสูงสุด :" /><label id="lblstockmax" style="font-weight:bold; color:blue;"/><label value="จุดต่ำสุด: " /><label id="lblstockmin" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="Department: " /><label id="lbldepart" style="font-weight:bold; color:blue;"/><label value="เจ้าหนี้ : " /><label id="lblapname" style="font-weight:bold; color:blue;"/>
+			</row>			
+			<row><label value="ทีมขาย :" /><label id="lblsaleteam" style="font-weight:bold; color:blue;"/><label value="อัตราส่วน : " /><label id="lblrate" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="Buyer Name : "/><label id="lblbuyername"  style="font-weight:bold; color:blue;"/><label value="MC Name : "/><label id="lblmcname"  style="font-weight:bold; color:blue;"/>
+			</row>
+						
+		</rows>
+	</grid>
+	
+	<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right" />
+			<column label="" width="280px" align="left" />
+			<column label="" width="120px" align="right"/>
+			<column label="" width="280px" align="left" />
+		</columns>
+		<rows>
+			<row style="background-color:#88B8FF"><label value="เลขที่เอกสาร : "/><label id="lbldocno" style="font-weight:bold; color:blue;"/><label value="วันที่เอกสาร : "/><label id="lbldocdate" style="font-weight:bold; color:blue;"/>	
+			</row>
+			<row style="background-color:#88B8FF"><label value="ผู้สร้างเอกสาร : "/><label id="lblcreator" style="font-weight:bold; color:blue;"/><label value="วันที่สร้าง : "/><label id="lblcreatedate" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row style="background-color:#88B8FF"><label value="ผู้เสนอซื้อ : " /><label id="lblworkman" style="font-weight:bold; color:blue;"/><label value="คำอธิบาย : " /><label id="lblmydesc" style="font-weight:bold; color:blue;"/>			
+			</row>
+		</rows>
+	</grid>
+</groupbox>
+<groupbox width="800px">
+<listbox width="800px">
+	<listhead>
+		<listheader label="คลัง" width="100px"/>
+		<listheader label="ยอดคงเหลือ" width="100px" align="right"/>
+		<listheader label="ยอดค้างรับ"  width="100px" align="right"/>
+		<listheader label="ยอดค้างส่ง"  width="100px" align="right"/>
+		<listheader label="ยอดจอง"  width="100px" align="right"/>
+		<listheader label="ยอดขายเฉลี่ย/สัปดาห์จาก 12 สัปดาห์"  width="230px" align="right"/>		
+	</listhead>	
+	<listitem>
+		<listcell label="S01" style="font-size:12; font-weight:bold; color:#0429E0;"/>
+		<listcell><label id="lblrmqtys01" /></listcell>
+		<listcell><label id="lblrminqtys01" /></listcell>
+		<listcell><label id="lblrmoutqtys01" /></listcell>
+		<listcell><label id="lblrvqtys01" /></listcell>
+		<listcell><label id="lblsl3ms01" /></listcell>
+	</listitem>
+	<listitem>
+		<listcell label="S02" style="font-size:12; font-weight:bold; color:#E24A00;"/>
+		<listcell><label id="lblrmqtys02" /></listcell>
+		<listcell><label id="lblrminqtys02" /></listcell>
+		<listcell><label id="lblrmoutqtys02" /></listcell>
+		<listcell><label id="lblrvqtys02" /></listcell>
+		<listcell><label id="lblsl3ms02" /></listcell>
+	</listitem>
+	<listfoot>
+	<listfooter><label value="รวมทั้งหมด" style="font-weight:bold;" /></listfooter>
+	<listfooter><label id="lblrmqty" style="font-weight:bold;" /></listfooter>
+	<listfooter><label id="lblrminqty" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblrmoutqty" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblrvqty" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblsumsale" style="font-weight:bold;"/></listfooter>	
+	</listfoot>
+</listbox>
+<panel title="ยอดคงเหลือตามชั้นเก็บ" border="normal" collapsible="true" open="false" width="800px">
+<panelchildren>
+<listbox id="lbxshelfinfo" >
+	<listhead>
+		<listheader label="คลัง" width="100px"/>
+		<listheader label="ชื่อชั้นเก็บ" align="left"/>
+		<listheader label="จำนวน"  align="right"/>
+		<listheader label="หน่วยนับ"  align="left"/>
+	</listhead>	
+</listbox>
+</panelchildren>
+</panel>
+<label id="lblapcode" visible="false" />
+</groupbox>
+</tabpanel>
+<!-- End First Tab -->
+		<tabpanel>
+		<listbox id="lsrqstk">
+			<listhead>
+				<listheader label="เลขที่ใบเสนอซื้อ" width="150px"/>
+				<listheader label="วันที่เอกสาร" width="80px"/>
+				<listheader label="รหัสสินค้า" width="120px"/>
+				<listheader label="ชื่อสินค้า" width="300px"/>
+				<listheader label="จำนวน" width="50px"/>
+				<listheader label="ต้องการ" width="50px"/>
+				<listheader label="หน่วยนับ" width="100px"/>
+			</listhead>	
+		</listbox>
+		</tabpanel>
+	</tabpanels>
+</tabbox>
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+Connection vConn;
+
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="siravich";
+vpassword="thaikom$$";
+
+String bcuser;
+String bcpass;
+String pvItemCode;
+
+
+// set format
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+// set Class connect SQL jdbc
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+public void pConndb(){
+	if(vuser !="" ||  vuser!=null){
+		try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		vConn =  DriverManager.getConnection(vurl, vuser, vpassword);
+		//System.out.println("connect db");
+		}catch(SQLException e){}
+	}
+}
+
+public void loadMCdetail(){
+	Double v1=0.00, v2=0.00, vtotal=0.00;
+	String bycode;
+	String byname;
+	String vmccode;
+	String vmcname;
+	String vSTRQry;
+	
+	try{
+		pvItemCode=lbltfitmcode.getValue();
+	   	pConndb();	   
+		Statement stm = vConn.createStatement();
+		// stm.executeQuery("exec USP_PR_SearchReOrderNotApproveItemDetails_Profile '"+pvItemCode+"'");
+		vSTRQry="exec USP_PR_SearchReOrderNotApproveItemDetails_Profile '"+pvItemCode+"'";
+		stm.executeQuery(vSTRQry);
+		ResultSet rstm = stm.getResultSet();
+	//	System.out.println(pvprno+" : "+pvitemcode);
+		while(rstm.next()){
+			
+			v1=rstm.getDouble("sumsaleqty3monthagos01");
+			v2=rstm.getDouble("sumsaleqty3monthagos02");
+			vtotal=(v1+v2)/12;
+			
+			lbldocno.setValue(rstm.getString("docno"));
+			lbldocdate.setValue(dtmformat.format(rstm.getDate("docdate")));
+			lblcreator.setValue(rstm.getString("creatorcode"));
+			lblcreatedate.setValue(dtmformat.format(rstm.getDate("createdatetime")));
+			lblworkman.setValue(rstm.getString("workmanname"));
+			lblmydesc.setValue(rstm.getString("mydescription"));
+			lblitemcode.setValue(rstm.getString("itemcode"));
+			lblitemname.setValue(rstm.getString("itemname"));
+			lblqty.setValue(numformat.format(rstm.getDouble("qty")));
+			lblsdadj.setValue(numformat.format(rstm.getDouble("adjustqty1")));
+			lblsgmadj.setValue(numformat.format(rstm.getDouble("adjustqty2")));
+			lbldefbuyunitcode.setValue(rstm.getString("defbuyunitcode"));
+			lbldefstkunitcode.setValue(rstm.getString("defstkunitcode"));
+			lblunitcode.setValue(rstm.getString("unitcode"));
+			lblwantday.setValue(rstm.getString("wantday"));
+			lblwantdate.setValue(dtmformat.format(rstm.getDate("wantdate")));
+			lbldepart.setValue(rstm.getString("departname"));
+			lblapcode.setValue(rstm.getString("apcode"));
+			lblapname.setValue(rstm.getString("apname"));
+			lblsaleteam.setValue(rstm.getString("expertname"));
+			lblrate.setValue(numformat.format(rstm.getDouble("rate1")));
+			
+			lblrmqtys01.setValue(numformat.format(rstm.getDouble("remainqtys01")));
+			lblrminqtys01.setValue(numformat.format(rstm.getDouble("remaininqtys01")));
+			lblrmoutqtys01.setValue(numformat.format(rstm.getDouble("remainoutqtys01")));
+			lblrvqtys01.setValue(numformat.format(rstm.getDouble("reserveqtys01")));
+			Double vs3months1;
+			vs3months1 =rstm.getDouble("sumsaleqty3monthagos01");			
+			lblsl3ms01.setValue(numformat.format(vs3months1/12));
+			lblrmqtys02.setValue(numformat.format(rstm.getDouble("remainqtys02")));
+			lblrminqtys02.setValue(numformat.format(rstm.getDouble("remaininqtys02")));
+			lblrmoutqtys02.setValue(numformat.format(rstm.getDouble("remainoutqtys02")));
+			lblrvqtys02.setValue(numformat.format(rstm.getDouble("reserveqtys02")));
+			Double vs3months2;
+			vs3months2 = rstm.getDouble("sumsaleqty3monthagos02");
+			lblsl3ms02.setValue(numformat.format(vs3months2/12));
+			lblrmqty.setValue(numformat.format(rstm.getDouble("stockqty")));
+			lblrminqty.setValue(numformat.format(rstm.getDouble("remaininqty")));
+			lblrmoutqty.setValue(numformat.format(rstm.getDouble("remainoutqty")));
+			lblrvqty.setValue(numformat.format(rstm.getDouble("reserveqty")));
+			lblsumsale.setValue(numformat.format(vtotal));			
+			// update 26/8/2011
+			lbllastbuyprice.setValue(numformat.format(rstm.getDouble("lastbuyprice")));
+			lbllastnetbuyprice.setValue(numformat.format(rstm.getDouble("lastnetbuyprice")));
+			lbllastapname.setValue(rstm.getString("lastapname"));
+			lbllastdiscount.setValue(numformat.format(rstm.getDouble("lastdiscount")));
+			lbllastdiscountword.setValue(rstm.getString("lastdiscountword"));
+			lblrvno.setValue(rstm.getString("rvno"));
+			lbllastsaledate.setValue(dtmformat.format(rstm.getDate("lastsaledate")));
+			lblcountbills01.setValue(numformat.format(rstm.getDouble("countbills01")));
+			lblcountbills02.setValue(numformat.format(rstm.getDouble("countbills02")));
+			lblitemstatus.setValue(rstm.getString("itemstatus"));
+			lblgrade.setValue(rstm.getString("grade"));
+			lblreddot.setValue(rstm.getString("reddot"));
+			lblorderpoint.setValue(numformat.format(rstm.getDouble("orderpoint")));
+			lblsaleprice.setValue(numformat.format(rstm.getDouble("saleprice1")));
+			lblstockmax.setValue(numformat.format(rstm.getDouble("stockmax")));
+			lblstockmin.setValue(numformat.format(rstm.getDouble("stockmin")));
+			bycode=rstm.getString("buyer");
+			byname=rstm.getString("buyername");
+			vmccode=rstm.getString("mccode");
+			vmcname=rstm.getString("mcname");
+			lblbuyername.setValue(bycode+"/"+byname);
+			lblmcname.setValue(vmccode+"/"+vmcname);
+			
+		}			
+		
+	}catch(SQLException e){}
+}
+
+public void shelfinfos(){
+	try{
+		pConndb();
+		pvItemCode=lbltfitmcode.getValue();
+		Statement si = vConn.createStatement();
+		si.executeQuery("exec usp_pr_itemstockonhand '"+pvItemCode+"'");	
+		ResultSet rsi = si.getResultSet();
+		while(lbxshelfinfo.getItemCount()>0){
+			lbxshelfinfo.removeItemAt(0);
+		}
+		while(rsi.next()){
+			Listitem vli = new Listitem();
+			vli.appendChild(new Listcell(rsi.getString("whcode")));
+			vli.appendChild(new Listcell(rsi.getString("shelfcode")));
+			vli.appendChild(new Listcell(numformat.format(rsi.getDouble("qty"))));
+			vli.appendChild(new Listcell(rsi.getString("unitcode")));
+			lbxshelfinfo.appendChild(vli);			
+		}
+		/*lbxshelfinfo
+		if(lbxshelfinfo.getItemCount()==0){
+			Messagebox.show("ไม่มีสินค้านี้ในชั้นเก็บ ทั้ง 2 สาขา","information", Messagebox.OK,Messagebox.INFORMATION);
+		}
+		*/
+		
+	}catch(SQLException e){}
+}
+//---------------------------------PR Manual Tab2--------------------
+public void vShowPRstk(){
+	String vSTKQry;
+	lsrqstk.getItems().clear();
+	try{
+		pConndb();
+		pvItemCode = lbltfitmcode.getValue();
+		Statement st = vConn.createStatement();
+		vSTKQry="select a.docno, a.docdate, b.itemcode,itemname, b.qty, b.remainqty, b.unitcode "+
+			"from bcstkrequest a "+
+			"left join bcstkrequestsub b on a.docno=b.docno "+
+			" where b.itemcode='"+pvItemCode+"' and a.iscancel=0 and(month(getdate())-month(a.docdate)) <= 1 and year(getdate()) = year(a.docdate)";
+		st.executeQuery(vSTKQry);
+		ResultSet prs = st.getResultSet();
+		while(lsrqstk.getItemCount()>0){
+			lsrqstk.removeItemAt(0);			
+		}
+		while(prs.next()){
+			Listitem pli = new Listitem();
+			Listcell lci0 = new Listcell();
+			lci0.setLabel(prs.getString("Docno"));
+			lci0.setStyle("color:#BF0808;");
+			pli.appendChild(lci0);
+			pli.appendChild(new Listcell(dtmformat.format(prs.getDate("DocDate"))));
+			pli.appendChild(new Listcell(prs.getString("ItemCode")));
+			pli.appendChild(new Listcell(prs.getString("ItemName")));
+			pli.appendChild(new Listcell(numformat.format(prs.getDouble("qty"))));
+			pli.appendChild(new Listcell(numformat.format(prs.getDouble("remainqty"))));
+			pli.appendChild(new Listcell(prs.getString("unitcode")));
+			lsrqstk.appendChild(pli);
+		}
+	}catch(SQLException e){}
+}
+	]]>
+</zscript>
+</window>
+</zk>

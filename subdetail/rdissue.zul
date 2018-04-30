@@ -1,0 +1,106 @@
+<?page title="Issue" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="Issue" id="wissue" width="500px" border="normal" onCreate="checkuserlogin();" >
+<groupbox> 
+<grid>
+		<columns>
+			<column label="" align="right"/>
+			<column label=""/>
+		</columns>
+		<rows>
+			<row><label value="หัวข้อ : " /><textbox id="txttitle" width="300px"/>
+			</row>
+			<row><label value="รายละเอียด : " /><textbox id="txtmsg" multiline="true" rows="5" cols="50"/>			
+			</row>
+			<row ><hbox></hbox><hbox><button label="บันทึก" onClick="postmsg();" /><button label="เคลียร์" onClick="clrtbx()" /><button label="ปิด" onClick="wissue.detach();" /></hbox>			
+			</row>
+		</rows>
+	</grid>
+</groupbox>
+
+<zscript>
+<![CDATA[
+   import java.io.*;
+   import java.sql.*;
+   import java.lang.*;
+   import javax.servlet.http.Cookie;
+   import javax.servlet.http.HttpServletRequest;
+   import javax.servlet.http.HttpServletResponse; 
+   String vserver;
+   String vdbname;
+   String vurl;
+   String vuser;
+   String vpassword;
+   String vprofit;
+   String vtitle;
+   String vmsg;
+   Connection vconn;
+   vserver="//192.168.0.7:1433;";
+   vdbname="bcnp";
+   //vuser="panuvich";
+   //vpassword="thaikom$$";
+   Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+   
+   public void checkuserlogin(){
+	   try{
+			Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+			for (Cookie cookie : ck) {
+				if (cookie.getName().equals("cuser")) {
+					vuser =cookie.getValue();
+				}
+			}
+			for (Cookie ckps : ck) {
+				if (ckps.getName().equals("cpass")) {
+					vpassword =ckps.getValue();
+				}
+			}
+			for (Cookie ckpf : ck) {
+				if (ckpf.getName().equals("ckprofitcode")) {
+					vprofit = ckpf.getValue();
+				}
+			}
+			if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+				//System.out.println("cookie = "+cookies);
+				Executions.sendRedirect("index.zul");		
+			} 			
+			}catch (Exception e){}
+	}
+   public void publicconnection(){
+		if(vuser !="" ||  vuser!=null){
+			try{
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+			vconn =  DriverManager.getConnection(vurl, vuser, vpassword);
+			//System.out.println("connect db");
+			}catch(SQLException e){}
+		}
+	}
+   public void postmsg(){
+	   vtitle= txttitle.getValue();
+	   vmsg= txtmsg.getValue();
+	   
+	   try{		   
+		   vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		   vconn =  DriverManager.getConnection(vurl, vuser, vpassword);
+		   Statement s = vconn.createStatement();
+		   s.execute("exec USP_NP_ReorderIssue '"+vtitle+"','"+vmsg+"','"+vuser+"'");
+		   //ResultSet rs = s.getResultSet();
+		   alert("บันทึกข้อมูลเรียบร้อยแล้ว IT จะรีบดำเนินการปัญหาหรือข้อเสนอแนะนี้..ขอบคุณครับ.");
+		   txttitle.setValue("");
+		   txtmsg.setValue("");
+		   wissue.detach();
+		  // final Window winitm = (Window) Executions.createComponents("subdetail/issuelist.zul",null, null);
+	   }catch(SQLException e){}
+	   
+   }
+   void clrtbx(){
+	   txttitle.setValue("");
+	   txtmsg.setValue("");  
+   }
+   void loadislist(){
+	   final Window winis = (Window) Executions.createComponents("subdetail/issuelist.zul",null, null);
+	   wissue.detach();
+   }
+	]]>
+</zscript>
+</window>
+</zk>

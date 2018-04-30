@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="pritemorderpoint" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString language="SQL">
+		<![CDATA[exec usp_pr_itemreorderbyorderpoint 'EPT01','','00023']]>
+	</queryString>
+	<field name="itemcode" class="java.lang.String"/>
+	<field name="itemname" class="java.lang.String"/>
+	<field name="defstkunitcode" class="java.lang.String"/>
+	<field name="orderpoint" class="java.math.BigDecimal"/>
+	<field name="stockmax" class="java.math.BigDecimal"/>
+	<field name="stockmin" class="java.math.BigDecimal"/>
+	<field name="sumqty" class="java.math.BigDecimal"/>
+	<field name="departcode" class="java.lang.String"/>
+	<field name="departname" class="java.lang.String"/>
+	<field name="defbuyunitcode" class="java.lang.String"/>
+	<field name="stockqty" class="java.math.BigDecimal"/>
+	<field name="remainoutqty" class="java.math.BigDecimal"/>
+	<field name="remaininqty" class="java.math.BigDecimal"/>
+	<field name="reserveqty" class="java.math.BigDecimal"/>
+	<field name="expertcode" class="java.lang.String"/>
+	<field name="expertname" class="java.lang.String"/>
+	<field name="section" class="java.lang.String"/>
+	<field name="sectionname" class="java.lang.String"/>
+	<field name="remainqtyS01" class="java.math.BigDecimal"/>
+	<field name="remainqtyS02" class="java.math.BigDecimal"/>
+	<field name="remainoutqtyS01" class="java.math.BigDecimal"/>
+	<field name="remainoutqtyS02" class="java.math.BigDecimal"/>
+	<field name="remaininqtyS01" class="java.math.BigDecimal"/>
+	<field name="remaininqtyS02" class="java.math.BigDecimal"/>
+	<field name="reserveqtyS01" class="java.math.BigDecimal"/>
+	<field name="reserveqtyS02" class="java.math.BigDecimal"/>
+	<field name="grade" class="java.lang.String"/>
+	<field name="itemstatus" class="java.lang.String"/>
+	<field name="reddot" class="java.lang.String"/>
+	<field name="orderqty" class="java.math.BigDecimal"/>
+	<group name="departname">
+		<groupExpression><![CDATA[$F{departname}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="61" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="125" splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

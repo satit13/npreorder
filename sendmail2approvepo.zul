@@ -1,0 +1,239 @@
+<?page style="height:100%" ?>
+<window id="winpr" width="100%" height="100%" onCreate="loadsaleteam(); checkuserlogin()">
+<div align="center">
+<label value="จัดซื้อ ส่ง E-mail รายงานประกอบการอนุมัติ PO" style="font-size:18; font-weight:bold; color:#036D9F;"/>
+	<grid width="380px">
+		<columns>
+			<column label="" width="100px" align="right"/>
+			<column label="" width="280px" align="left" />
+			
+			<column />
+		</columns>
+		<rows>
+			<row>
+			<label value="ทีมขาย" /><combobox id="cmbsaleteam"/>			
+			</row>			
+			<row>
+			<label value="" /><button label="พิมพ์รายงาน" >
+			<attribute name="onClick" >
+			    //in disable case .
+			    Messagebox.show("รายงานจะส่ง E-mail อัตโนมัติ กรุณาเปิด E-mail เพื่อพิมพ์รายงาน.",
+			    "ยืนยันรายการ", Messagebox.OK | Messagebox.CANCEL,
+			    Messagebox.QUESTION,
+			        new org.zkoss.zk.ui.event.EventListener(){
+			            public void onEvent(Event e){
+			                if("onOK".equals(e.getName())){
+			                    printReportPO();
+			                }else if("onCancel".equals(e.getName())){                    
+			                }   
+			            }
+			        }
+			    );
+			</attribute>
+			</button>	
+			</row>
+		</rows>
+	</grid>
+	<combobox id="cmbdepartment" visible="false"/>
+	<combobox id="cmbsection" visible="false"/>	
+	<combobox id="cmbap" visible="false"/>
+	<textbox id="txtprno"  onOK="printReportPO()" visible="false"/>
+	</div>
+<jasperreport id="report" />
+<zscript>
+<![CDATA[
+
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRField;
+import java.util.*;
+import org.zkoss.util.media.AMedia;
+import org.zkoss.zul.*;
+
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vprofit;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="";
+vpassword="";	
+vprofit="";
+String iselectsaleteam;
+String iselectsection="";
+String iselectdepartment="";
+String vprnumber;
+
+
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+	
+public void checkuserlogin(){
+	try{
+		Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+		for (Cookie cookie : ck) {
+			if (cookie.getName().equals("cuser")) {
+				vuser =cookie.getValue();
+			}
+		}
+		for (Cookie ckps : ck) {
+			if (ckps.getName().equals("cpass")) {
+				vpassword =ckps.getValue();
+			}
+		}
+		for (Cookie ckpf : ck) {
+			if (ckpf.getName().equals("ckprofitcode")) {
+				vprofit = ckpf.getValue();
+			}
+		}
+		if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+			//System.out.println("cookie = "+cookies);
+			Executions.sendRedirect("index.zul");		
+		} else
+		{		
+			loadsaleteam();
+		}
+		
+		}catch (Exception e){}
+} 
+void printReportPO() {
+			
+	Connection conn = null;
+	PreparedStatement stmt = null;
+	ResultSet rs = null;
+	JRResultSetDataSource jrds = null;	
+		
+	
+	
+		try{
+			if(txtprno.getValue()!=""){
+				vprnumber = txtprno.getValue();	
+			}else {vprnumber="";}
+			
+			if(cmbsaleteam.getSelectedIndex()>=0){
+				iselectsaleteam =cmbsaleteam.getSelectedItem().getValue().toString();			
+				}else{iselectsaleteam="";}
+			if(cmbsection.getSelectedIndex()>=0){
+				iselectsection = cmbsection.getSelectedItem().getValue().toString();
+			}else { iselectsection ="";}
+			if(cmbdepartment.getSelectedIndex()>=0){
+				iselectdepartment = cmbdepartment.getSelectedItem().getValue().toString();
+			}else { iselectdepartment = "";}
+		 	 	
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";  
+			conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement st = conn.createStatement();
+			st.execute("exec usp_pr_InsertPrintReOrderAuto_Cat '"+vuser+"','004','"+iselectsaleteam+"','"+vprofit+"','"+iselectdepartment+"','"+iselectsection+"','','"+vprnumber+"'");
+			
+			//rs = stmt.executeQuery();			
+			/*
+			report.setSrc(session.getWebApp().getRealPath("/WEB-INF/report/rpitemrequest.jasper"));			
+			report.setDatasource(new JRResultSetDataSource(rs));					
+			report.setType("pdf");	
+				*/
+				}  
+		
+			catch(SQLException e){
+				
+				System.out.println(e);
+				}
+		 
+		} 	
+
+public void loadsaleteam(){
+	try {
+	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_pr_searchsaleteam_Cat");
+		ResultSet rs = s.getResultSet();
+		while(rs.next()){
+			Comboitem cbxitm = new Comboitem();
+			cbxitm.setLabel(rs.getString("saleteam"));
+			cbxitm.setValue(rs.getString("expertcode"));				
+			cmbsaleteam.appendChild(cbxitm);		
+		}
+		cmbsection.setText("");
+		cmbdepartment.setText("");		
+	} catch (SQLException e){}
+	
+}
+
+// combobox Department  <button label="Print" onClick="Clients.print();"/>
+public void loaddepartment(){
+	String vselect;
+	cmbdepartment.setText("");
+try {
+		cmbdepartment.getItems().clear();
+		vselect = cmbsaleteam.getSelectedItem().getValue().toString();
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sd = conn.createStatement();
+		sd.executeQuery("exec usp_pr_searchdepartment_Cat '"+vselect+"'");
+		ResultSet rsd = sd.getResultSet();
+		while(rsd.next()){
+			Comboitem cbdep = new Comboitem();
+			cbdep.setLabel(rsd.getString("departname"));
+			cbdep.setValue(rsd.getString("departmentcode"));				
+			cmbdepartment.appendChild(cbdep);			
+		}
+	} catch (SQLException e){}
+}
+
+public void loadsection(){
+	String vsection;
+	cmbsection.setText("");
+	
+try {
+		cmbsection.getItems().clear();
+		vsection = cmbsaleteam.getSelectedItem().getValue().toString();	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sc = conn.createStatement();
+		sc.executeQuery("exec usp_pr_searchsection_Cat '"+vsection+"'");
+		ResultSet rsc = sc.getResultSet();
+		while(rsc.next()){
+			Comboitem cbsec = new Comboitem();
+			cbsec.setLabel(rsc.getString("sectionname"));
+			cbsec.setValue(rsc.getString("sectionid"));				
+			cmbsection.appendChild(cbsec);			
+		}
+	} catch (SQLException e){}
+}
+public void loadvendor(){
+	String vSelectSL;
+	cmbap.getItems().clear();
+	vSelectSL = cmbsaleteam.getSelectedItem().getValue().toString();
+	try {
+		    
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sap = conn.createStatement();
+			sap.executeQuery("exec usp_pr_searchvendor_Cat '"+vSelectSL+"'");
+			ResultSet rsap = sap.getResultSet();
+			while(rsap.next()){
+				Comboitem cbap = new Comboitem();
+				cbap.setLabel(rsap.getString("apname"));
+				cbap.setValue(rsap.getString("apcode"));				
+				cmbap.appendChild(cbap);				
+			}
+		} catch (SQLException e){}
+	}
+void printrp(){
+	report.focus();	
+	Clients.print();	
+}
+	
+	]]>
+</zscript>
+</window>

@@ -1,0 +1,318 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk xmlns:x="native">
+<style>
+	.lbltext{
+		font-size:11px;
+		font-weight:bold;
+		color:#04578B;
+	}
+</style>
+<div align="center">
+<window title="ลงทะเบีียน Vendor E-mail" border="normal" onCreate="checkuserlogin()" width="800px">
+
+<x:table class="lbltext">
+<x:tr>
+<x:td>ทีมขาย</x:td>
+<x:td><textbox id="txcatman" readonly="true" /></x:td>
+<x:td></x:td>
+<x:td><textbox id="txSaveStatus" inplace="true" readonly="true" value="บันทึกข้อมูลเรียบร้อยแล้ว" style="background-color:#09862E; font-size:normal; color:#FFFFFF; width:150px; height:20px; text-align:center;" visible="false"/></x:td>
+</x:tr>
+<x:tr>
+<x:td>รหัสเจ้าหนี้</x:td>
+<x:td><bandbox id="bndvendor" onOK="vEnterBD();" onChanging="uChangeBND();">
+<bandpopup>
+	<hbox><label value="ค้นหารหัสหรือชื่อเจ้าหนี้ :"/><textbox id="vendorSearch" onOK="searchVendor();"/><button label="ตกลง" onClick="searchVendor()" /></hbox>
+		<listbox id="lbxVendor" mold="paging" pageSize="10" width="520px" onSelect="fSelectVendor(); bndvendor.close();">		
+		<listhead>
+			<listheader label="รหัส" width="100px"/>
+			<listheader label="ชื่อ" width="280px"/>
+		</listhead>		
+	</listbox>
+</bandpopup>
+</bandbox></x:td>
+<x:td>ชื่อเจ้าหนี้</x:td>
+<x:td><textbox id="txvendorname" width="310px" readonly="true"/></x:td>
+</x:tr>
+<x:tr>
+<x:td>ชื่อผู้ติดต่อ</x:td>
+<x:td colspan="3"><textbox id="txcontactname" width="520px"/></x:td>
+</x:tr>
+<x:tr>
+<x:td>E-mail</x:td>
+<x:td colspan="3">
+<hbox>
+<textbox id="txemail" width="400px" onChanging="vActiveSaveBtn()"/>
+<button label="ตรวจสอบอีเมล์" image="/images/accept.png" onClick="" visible="false" />
+</hbox>
+</x:td>
+<x:tr>
+<x:td></x:td>
+<x:td colspan="3">
+<label value="สามารถป้อนหลายอีเมล์ได้ ตัวอย่าง : mc1@nopadol.com, mc2@nopadol.com, mc3@nopadol.com " style="font-weight:bold; color:#0E9AD6;"/>
+</x:td>
+</x:tr>
+</x:tr>
+<x:tr>
+<x:td></x:td>
+<x:td colspan="3">
+<hbox>
+<button label="ล้างหน้าจอ" id="btnNew" image="/images/add.png"  onClick="clrScreen()" />
+<button label="บันทึก" id="btnSave" image="/images/save.png"  onClick="saveVendorMail()" disabled="true"/>
+<button label="ออก" id="btnExit" image="/images/next.png"  onClick="exitwin()" />
+</hbox>
+</x:td>
+</x:tr>
+</x:table>
+
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vprofit;
+String vckcat;
+String vulevel;
+Integer intulevel;
+Connection vconn;
+String myClass;
+
+//-------------------------------------onChanging="lockVendor()" 
+
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+myClass="com.microsoft.sqlserver.jdbc.SQLServerDriver";
+Class.forName(myClass).newInstance();
+
+
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+
+public void checkuserlogin(){
+	try{
+	Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	for (Cookie cookie : ck) {
+		if (cookie.getName().equals("cuser")) {
+			vuser =cookie.getValue().trim();
+		}
+	}
+	for (Cookie ckps : ck) {
+		if (ckps.getName().equals("cpass")) {
+			vpassword =ckps.getValue().trim();
+		}
+	}
+	for (Cookie ckpf : ck) {
+		if (ckpf.getName().equals("ckprofitcode")) {
+			vprofit = ckpf.getValue().trim();
+		}
+	}
+	for (Cookie ckcat : ck) {
+		if (ckcat.getName().equals("ckcatcode")) {
+			vckcat = ckcat.getValue().trim();
+			//System.out.println(vckcat);
+			txcatman.setValue(vckcat);
+			//vcatcode=Integer.parseInt(vckcat);
+			
+		}
+	}
+	for(Cookie cklv :ck){
+		if(cklv.getName().equals("ulevel")){
+			vulevel = cklv.getValue().trim();
+			intulevel=Integer.parseInt(vulevel);
+		}
+	}
+	if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+		//System.out.println("cookie = "+cookies);
+		Executions.sendRedirect("index.zul");		
+	} else
+	{		
+		//loadsaleteam();
+		// gbapv.setVisible(false);
+	}	
+	}catch (Exception e){}
+}
+public void clrusercookies(){
+	try{
+		HttpServletResponse response = (HttpServletResponse)Executions.getCurrent().getNativeResponse();
+    	Cookie userCookie = new Cookie("user", "");
+    	Cookie passCookie = new Cookie("pass", ""); 
+    	response.addCookie(userCookie); 
+    	response.addCookie(passCookie);
+    	Executions.sendRedirect("index.zul");
+	}catch (Exception e){}
+	
+}
+
+public void connectdb(){
+	try{
+		// vurl="jdbc:mysql:"+vserver+vdbname+"";
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";  
+		vconn =  DriverManager.getConnection(vurl, vuser, vpassword);
+	}catch(SQLException e){	}	
+}
+
+public void saveVendorMail(){
+	String vTeamCode;
+	String vVendorCode;
+	String vVendorName;
+	String vContactName;
+	String vEmail;
+	String vQry;
+	try{
+		vTeamCode = txcatman.getValue();
+		vVendorCode = bndvendor.getValue();
+		vVendorName = txvendorname.getValue();
+		vContactName = txcontactname.getValue();
+		vEmail = txemail.getValue();
+		connectdb();
+		vQry="Exec USP_NP_InsertUpdateMailMaster '"+vVendorCode+"','"+vVendorName+"','"+vContactName+"'"+
+		",'"+vEmail+"','"+vTeamCode+"','"+vuser+"'";
+		System.out.println("SaveMail = "+vQry);
+		Statement st = vconn.createStatement();
+		st.execute(vQry);		
+		alert("บันทึกข้อมูลทะเบียน Email Vendor :"+vVendorName+" เรียบร้อยแล้ว");
+		txSaveStatus.setVisible(true);
+		btnSave.setDisabled(true);
+	}catch(SQLException e){}
+}
+
+public void searchVendor(){
+	lbxVendor.getItems().clear();
+	String vSearch;
+	String vQry;
+	try{
+		vSearch=vendorSearch.getValue();
+		connectdb();
+		Statement st = vconn.createStatement();
+		vQry="Exec usp_ap_searchapcode '"+vSearch+"'";
+		st.executeQuery(vQry);
+		ResultSet rs = st.getResultSet();
+		while(lbxVendor.getItemCount()>0){
+			lbxVendor.removeItemAt(0);
+		}
+		while(rs.next()){
+			Listitem li= new Listitem();
+			li.appendChild(new Listcell(rs.getString("code")));
+			li.appendChild(new Listcell(rs.getString("name1")));
+			lbxVendor.appendChild(li);
+		}
+	}catch(SQLException e){}
+}
+public void fSelectVendor(){
+	String vCatman;
+	String vVendorCode;
+	String vRSQry;
+	Listitem sli = new Listitem();
+	sli=lbxVendor.getSelectedItem();
+	Listcell lccode = (Listcell) sli.getChildren().get(0);
+	Listcell lcname = (Listcell) sli.getChildren().get(1);
+	vCatman=txcatman.getValue();
+	vVendorCode=lccode.getLabel();
+	bndvendor.setValue(vVendorCode);
+	txvendorname.setValue(lcname.getLabel());
+	try{
+		connectdb();
+		Statement stx = vconn.createStatement();
+		vRSQry="exec usp_np_searchmailmaster '"+vVendorCode+"','"+vCatman+"'";
+		stx.execute(vRSQry);
+		ResultSet vRS = stx.getResultSet();
+		while(vRS.next()){
+			txcontactname.setValue(vRS.getString("ContactName"));
+			txemail.setValue(vRS.getString("Email"));
+		}
+	}catch(SQLException e){}
+	
+}
+public void vEnterBD(){
+	String vCatman;
+	String vSearch;
+	String vRSQry;
+	
+	try{
+		if(bndvendor.getValue().length()>0){
+			vSearch=bndvendor.getValue();
+			vCatman= txcatman.getValue();
+			connectdb();
+			Statement stx = vconn.createStatement();
+			vRSQry="Exec usp_ap_searchapcode '"+vSearch+"'";
+			System.out.println("----"+vRSQry);
+			stx.execute(vRSQry);
+			ResultSet vRS = stx.getResultSet();
+		while(vRS.next()){
+			txvendorname.setValue(vRS.getString("name1"));			
+		}
+		vEnterVendor();
+		}else
+		{
+			alert("กรุณาป้อนรหัส Vendor หรือค้นหา Vendor ก่อนครับ");
+		}
+	}catch(SQLException e){}
+}
+public void vEnterVendor(){
+	String vCatman;
+	String vVendorCode;
+	String vRSQry;
+	vCatman=txcatman.getValue();
+	vVendorCode = bndvendor.getValue();
+	try{
+		connectdb();
+		Statement stx = vconn.createStatement();
+		vRSQry="exec usp_np_searchmailmaster '"+vVendorCode+"','"+vCatman+"'";
+		stx.execute(vRSQry);
+		ResultSet vRS = stx.getResultSet();
+		while(vRS.next()){
+			txcontactname.setValue(vRS.getString("ContactName"));
+			txemail.setValue(vRS.getString("Email"));
+		}
+	}catch(SQLException e){}
+}
+
+public void lockVendor(){
+	bndvendor.setReadonly(true);
+	bndvendor.setButtonVisible(false);
+}
+
+public void clrScreen(){
+	bndvendor.setReadonly(false);
+	bndvendor.setButtonVisible(true);
+	bndvendor.setValue("");
+	txvendorname.setValue("");
+	txcontactname.setValue("");
+	txemail.setValue("");
+	btnSave.setDisabled(false);
+}
+public void vActiveSaveBtn(){
+	btnSave.setDisabled(false);
+}
+public void exitwin(){
+	try{
+	//winqo.detach();
+	Executions.sendRedirect("mainpage.zul");
+	}catch(Exception e)
+	{}
+}
+public void uChangeBND(){
+	txvendorname.setValue("");
+	txcontactname.setValue("");
+	txemail.setValue("");
+}
+
+	]]>
+</zscript>
+</window>
+</div>
+</zk>

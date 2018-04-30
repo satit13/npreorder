@@ -1,0 +1,241 @@
+<?page style="height:100%" ?>
+<window id="winpr" width="100%" height="100%" onCreate="loadsaleteam(); checkuserlogin()">	
+
+<grid width="550px">
+		<columns>
+			<column label="" width="75px"/>
+			<column label="" width="100px"/>
+			<column label="" width="125px"/>
+			<column label="" width="100px"/>
+			<column label="" width="50px"/>
+
+		</columns>
+		<rows>
+			<row>
+			<label value="เลือกทีม :" /><combobox id="cmbEPT" />			
+			<label value="เลือกเจ้าหนี้ :" visible="false"/><combobox id="cmbVendor"  visible="false"/>
+			<button label="ตกลง" image="/images/iOk.png" onClick="loadVendorSendMail()" />
+			</row>
+		</rows>
+	</grid>
+<listbox id="lsbxV" multiple="true" checkmark="true" mold="paging" pageSize="20">
+	<listhead>
+		<listheader label="เลขที่ PO" sort="auto" width="100px" />
+		<listheader label="วันที่" sort="auto" width="100px"/>
+		<listheader label="มูลค่า" sort="auto" width="100px"/>		
+		<listheader label="คำอธิบาย" sort="auto" width="300px"/>
+		<listheader label="เจ้าหนี้" sort="auto" width="200px"/>	
+		<listheader label="apcode" visible="false" />
+	</listhead>	
+</listbox>
+<button label="ส่งอีเมล์  PO ที่เลือก">
+<attribute name="onClick" >
+			    //in disable case .
+			    Messagebox.show("ระบบจะส่ง PO ถึง Vendor ตามที่เลือก",
+			    "ยืนยันรายการ", Messagebox.OK | Messagebox.CANCEL,
+			    Messagebox.QUESTION,
+			        new org.zkoss.zk.ui.event.EventListener(){
+			            public void onEvent(Event e){
+			                if("onOK".equals(e.getName())){
+								SendPO2Mail();
+			                }else if("onCancel".equals(e.getName())){                    
+			                }   
+			            }
+			        }
+			    );
+			</attribute>
+</button>
+
+<zscript>
+<![CDATA[
+
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRField;
+import java.util.*;
+import org.zkoss.util.media.AMedia;
+import org.zkoss.zul.*;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vprofit;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="";
+vpassword="";	
+vprofit="";
+String iselectsaleteam;
+String iselectsection="";
+String iselectdepartment="";
+String iselectap="";
+String vprnumber;
+String vEPTcode;
+String vVendorcode;
+
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+	
+public void checkuserlogin(){
+	try{
+	Cookie [] cookies = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	if(cookies[0].getValue() == null || cookies[0].getValue()==""){
+		//System.out.println("cookie = "+cookies);
+		Executions.sendRedirect("index.zul");		
+	} else
+	{
+		vuser=cookies[0].getValue();
+		vpassword =cookies[1].getValue();
+		vprofit = cookies[3].getValue();
+		//System.out.println("user : "+vuser+" Pass : "+vpassword);
+		loadsaleteam();
+	}
+	
+	}catch (Exception e){}
+} 
+
+
+
+public void loadsaleteam(){
+	try {
+	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_pr_searchsaleteam_Cat");
+		ResultSet rs = s.getResultSet();
+		while(rs.next()){
+			Comboitem cbxitm = new Comboitem();
+			cbxitm.setLabel(rs.getString("saleteam"));
+			cbxitm.setValue(rs.getString("expertcode"));				
+			cmbEPT.appendChild(cbxitm);		
+		}		
+	} catch (SQLException e){}
+	
+}
+
+// combobox Department  <button label="Print" onClick="Clients.print();"/>
+
+
+
+public void loadvendor(){
+	String vSelectSL;
+	cmbVendor.getItems().clear();
+	vSelectSL = cmbEPT.getSelectedItem().getValue().toString();
+	try {
+		    
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sap = conn.createStatement();
+			sap.executeQuery("exec usp_pr_searchvendor_Cat '"+vSelectSL+"'");
+			ResultSet rsap = sap.getResultSet();
+			while(rsap.next()){
+				Comboitem cbap = new Comboitem();
+				cbap.setLabel(rsap.getString("apname"));
+				cbap.setValue(rsap.getString("apcode"));				
+				cmbVendor.appendChild(cbap);				
+			}
+		} catch (SQLException e){}
+	}
+
+public void loadVendorSendMail(){
+
+	Integer i=0, x=0;
+	String vapcode;
+	Double vTotal=0.00;	
+	try{
+		if(cmbEPT.getSelectedIndex()>=0){
+			vEPTcode =cmbEPT.getSelectedItem().getValue().toString();			
+			}else{vEPTcode="";}		
+		
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_np_ponotconfirmdaily '"+vEPTcode+"',''");			
+		ResultSet rs = s.getResultSet();				
+		while(lsbxV.getItemCount()>0){
+			lsbxV.removeItemAt(0);
+		}
+		while(rs.next()){			
+			Listgroup lg = new Listgroup();
+			vVendorcode = rs.getString("apcode");
+			try{	
+				
+				Connection conn1 = DriverManager.getConnection(vurl, vuser, vpassword);
+				Statement s1 = conn1.createStatement();
+				s1.executeQuery("exec usp_np_ponotconfirmdaily_vendor '"+vEPTcode+"','"+vVendorcode+"'" );			
+				ResultSet rs1 = s1.getResultSet();				
+
+				while(rs1.next()){
+					
+					  Listitem lsitm = new Listitem();
+					  lsitm.appendChild(new Listcell(rs1.getString("docno")));
+					  lsitm.appendChild(new Listcell(dtmformat.format(rs1.getDate("docdate"))));
+					  lsitm.appendChild(new Listcell(numformat.format(rs1.getDouble("netamount"))));					  
+					  lsitm.appendChild(new Listcell(rs1.getString("apname")));
+					  lsitm.appendChild(new Listcell(rs1.getString("mydescription")));
+					  lsitm.appendChild(new Listcell(rs1.getString("apcode")));	
+					  lsbxV.appendChild(lsitm);
+					}
+				rs1.close();
+				s1.close();			
+
+				cmbEPT.setText("");
+				cmbVendor.setText("");				
+				
+				}catch (SQLException e){}	
+			}
+		}catch(SQLException e){}
+	}
+
+public void SendPO2Mail(){
+	String vapcodemail;
+	String vdocnomail;
+	
+	try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn1 = DriverManager.getConnection(vurl, vuser, vpassword);
+		//System.out.println(lsbx1.getItemCount());
+		if(lsbxV.getItemCount()>0){
+			
+			for(int x=0;x<lsbxV.getItemCount();x++){
+				Listitem lis = new Listitem();
+				lis = lsbxV.getItemAtIndex(x);
+				
+				if(lis.isSelected()== true){				
+					
+					Listcell lc1 = (Listcell) lis.getChildren().get(0);
+					Listcell lc5 = (Listcell) lis.getChildren().get(5);
+					vdocnomail = lc1.getLabel();	
+					vapcodemail = lc5.getLabel();				
+					
+					Statement vs = conn1.createStatement();
+					//vs.execute("");
+					vs.execute("exec usp_pr_InsertPrintReOrderAuto '"+vuser+"','003','"+vEPTcode+"','"+vprofit+"','"+iselectdepartment+"','"+iselectsection+"','"+iselectap+"','"+vdocnomail+"'");			
+					ResultSet vrs = vs.getResultSet();
+				}
+			}
+		}
+		
+			
+	}catch (SQLException e){}
+}
+	
+	]]>
+</zscript>
+</window>

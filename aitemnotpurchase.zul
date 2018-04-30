@@ -1,0 +1,249 @@
+<?page title="A Not Perchase" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="สินค้าเกรด A ที่เสนอซื้อและอนุมัติแล้ว แต่ไม่ได้ทำใบสั่งซื้อ" border="normal">
+<hbox>
+<label value="ศูนย์ธุรกิจ" visible="false"/>
+	<combobox id="cbprofit" width="80px" onCreate="self.setSelectedIndex(0)" visible="false">
+		<comboitem label="S01"/>
+		<comboitem label="S02"/>
+	</combobox>
+<label value="Expert" />
+	<combobox id="cbexpert" onSelect="loadDepartment();" width="80px">
+		<comboitem label="CAT1"/>
+		<comboitem label="CAT2"/>
+		<comboitem label="CAT3"/>
+	</combobox>
+<label value="Department"/>
+	<combobox id="cmbdepartment" />
+	<button label="ตกลง" onClick="itmAnotPurchase()" />
+	<button label="ออก" onClick="exitpage()" />
+	
+</hbox>
+<listbox id="lsitm">
+	<listhead>
+		<listheader label="รหัสสินค้า" width="125px"/>
+		<listheader label="ชื่อสินค้า" width="350px"/>
+		<listheader label="จำนวน" width="70px"/>
+		<listheader label="ขาย POS" width="75px"/>
+		<listheader label="คงเหลือ" width="75px"/>
+		<listheader label="จุดสั่งซื้อ" width="75px"/>		
+		<listheader label="เลขที่อนุมัติ" width="130px"/>
+		<!-- 
+		<listheader label="Family" width="120px"/>
+		<listheader label="Department" width="120px"/>
+		<listheader label="Category" width="120px"/>	
+		<listheader label="Expert" width="50px"/>
+		 -->
+		<listheader label="ชั้นเก็บ" width="50px"/>
+		<listheader label="คลัง" width="50px"/>	
+	</listhead>	
+</listbox>
+<zscript>
+<![CDATA[
+
+         import java.sql.*;
+         import java.io.*;
+         import java.lang.*;
+         import javax.servlet.http.Cookie;
+         import javax.servlet.http.HttpServletRequest;
+         import javax.servlet.http.HttpServletResponse; 
+         import java.util.List;
+         import java.text.SimpleDateFormat;
+         import java.text.DecimalFormat;
+         import java.util.Date;
+         import java.util.Calendar;
+         import org.zkoss.zk.ui.Executions;
+         import org.zkoss.zk.ui.event.CreateEvent;
+         import org.zkoss.zk.ui.event.Event;
+         import org.zkoss.zk.ui.event.ForwardEvent;
+         import org.zkoss.zk.ui.Executions;
+         import org.zkoss.zk.ui.Component;
+         import org.zkoss.zk.ui.event.EventListener;
+         import org.zkoss.zk.ui.event.Events;
+         import org.zkoss.zul.Listbox;
+         import org.zkoss.zul.Combobox;
+
+         String vserver;
+         String vdbname;
+         String vurl;
+         String vuser;
+         String vpassword;
+         vserver="//192.168.0.7:1433;";
+         vdbname="bcnp";
+         vuser ="sa";
+         vpassword="[ibdkifu";
+         Connection vCon;
+
+         SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+         DecimalFormat numformat = new DecimalFormat("##0.00");
+         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+         vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+         
+         
+         String vStrByCat ="";
+         
+         
+
+         public void pConnectDB(){
+         	if(vuser !="" ||  vuser!=null){
+         		try{
+         		
+         		vCon =  DriverManager.getConnection(vurl, vuser, vpassword);
+         		System.out.println("connect db");
+         		}catch(SQLException e){}
+         	}
+         }      
+         public void loadDepartment(){
+     	 	String vExpertCode;
+     	 	String vProfit;
+     	 	vProfit=cbprofit.getText();
+     		cmbdepartment.setText("");
+     		cmbdepartment.getItems().clear();
+     		vExpertCode = cbexpert.getText();
+     	try {        		    
+     		    pConnectDB();
+     			Statement sd = vCon.createStatement();
+     			sd.executeQuery("exec USP_PR_SearchDepartment_Profit '"+vProfit+"','"+vExpertCode+"'");
+     			ResultSet rsd = sd.getResultSet();
+     			while(rsd.next()){
+     				Comboitem cbdep = new Comboitem();
+     				cbdep.setLabel(rsd.getString("departname"));
+     				cbdep.setValue(rsd.getString("departmentcode"));				
+     				cmbdepartment.appendChild(cbdep);			
+     			}
+     		} catch (SQLException e){}
+     	}
+         
+         public void itmAnotPurchase(){
+ 			Integer vType=0;
+ 			String vGrade;
+ 			String vProfit;
+ 			String vExpert;
+ 			String vDeptCode;
+ 			String vQry;
+ 			String vQrysub;
+ 			String vDnm;
+ 			String vStrByDept;
+ 			String vCHKcmb;
+ 			lsitm.getItems().clear();
+ 			if(cbexpert.getText().length()>0){
+ 			
+ 			try{
+ 				
+ 				//vGrade=cbgrade.getText();
+ 				vProfit=cbprofit.getText();
+ 				vExpert=cbexpert.getText();
+ 				vCHKcmb=cmbdepartment.getText();
+ 				if(vCHKcmb.length()>0){
+ 					vDeptCode=cmbdepartment.getSelectedItem().getValue().toString();
+ 					vStrByDept="set dateformat dmy select departmentcode,department from vw_np_item_A_notpurchase WHERE expertcode='"+vExpert+"' and departmentcode='"+vDeptCode+"' Group by departmentcode,department";
+ 				}else{
+ 					vStrByDept="set dateformat dmy select departmentcode,department from vw_np_item_A_notpurchase WHERE expertcode='"+vExpert+"' Group by departmentcode,department";
+ 				}
+ 				pConnectDB();
+ 				Statement st = vCon.createStatement();
+ 				
+ 				System.out.println(vStrByDept);
+ 				st.executeQuery(vStrByDept);
+ 				ResultSet rs = st.getResultSet();				
+ 				
+ 				while(lsitm.getItemCount()>0){
+ 					lsitm.removeItemAt(0);
+ 				}
+ 			
+ 				while(rs.next()){
+ 					Listgroup lg = new Listgroup();
+ 					// Listitem lig = new Listitem();
+ 					 Listcell lch0 = new Listcell();
+ 					 Listcell lch1= new Listcell();
+ 					vDnm=rs.getString("departmentcode");
+ 					System.out.println(vDnm);
+ 					Label lblcode = new Label();
+ 					lblcode.setValue(vDnm);
+ 					 lch0.setLabel(vDnm);
+ 					lch1.setLabel(rs.getString("department"));
+ 					//lig.appendChild(lch0);
+ 					// lig.appendChild(lch1);
+ 					 lg.appendChild(lch0);
+ 					 lg.appendChild(lch1);
+ 					lg.setOpen(false);
+ 					//lg.appendChild(lblcode);
+ 				 	lsitm.appendChild(lg);
+ 					
+ 					try{
+ 						Integer vCount=0;
+ 						Double vStkQty;
+ 						pConnectDB();
+ 						Statement std = vCon.createStatement();
+ 						vQrysub="set dateformat dmy SELECT * FROM vw_np_item_A_notpurchase where departmentcode='"+vDnm+"'";
+ 						std.executeQuery(vQrysub);
+ 						ResultSet rsd = std.getResultSet();
+ 						while(rsd.next()){
+ 							Listitem lid = new Listitem();
+ 							/*
+ 					         <listheader label="รหัสสินค้า" /> code
+ 							<listheader label="ชื่อสินค้า" />name1
+ 							<listheader label="จำนวน" /> qty
+ 							<listheader label="จุดสั่งซื้อ" /> orderpoint
+ 							<listheader label="จำนวนขาย POS" /> posqty
+ 							<listheader label="Manual DocNo" /> mnno
+ 							<listheader label="กลุ่มสินค้า" /> family
+ 							<listheader label="ประเภท" />department
+ 							<listheader label="ชนิด" />	category
+ 							<listheader label="Expert Code" />	expertcode
+ 							<listheader label="ชั้นเก็บ" /> shelfcode
+ 							<listheader label="คลัง" />	whcode
+ 					         */
+ 							lid.appendChild(new Listcell(rsd.getString("code")));
+ 							lid.appendChild(new Listcell(rsd.getString("name1")));
+ 							lid.appendChild(new Listcell(numformat.format(rsd.getDouble("qty"))));
+ 							lid.appendChild(new Listcell(numformat.format(rsd.getDouble("posqty"))));
+ 							vStkQty=rsd.getDouble("netqty");
+ 							Listcell lcstk = new Listcell();
+ 							if(vStkQty<=0){
+ 								lcstk.setStyle("font-weight:bold; color:red;");
+ 								lcstk.setLabel(numformat.format(vStkQty));
+ 							}else{
+ 								lcstk.setLabel(numformat.format(vStkQty));
+ 							}
+ 							lid.appendChild(lcstk);
+ 							lid.appendChild(new Listcell(numformat.format(rsd.getDouble("orderpoint")))); 							
+ 							lid.appendChild(new Listcell(rsd.getString("confirmno")));
+ 							/*
+ 							lid.appendChild(new Listcell(rsd.getString("family")));
+ 							lid.appendChild(new Listcell(rsd.getString("department")));
+ 							lid.appendChild(new Listcell(rsd.getString("category")));
+ 							lid.appendChild(new Listcell(rsd.getString("expertcode")));
+ 							*/
+ 							lid.appendChild(new Listcell(rsd.getString("shelfcode")));
+ 							lid.appendChild(new Listcell(rsd.getString("whcode")));
+ 							lsitm.appendChild(lid);
+ 							vCount+=1;
+ 						}
+ 						Listgroupfoot lf = new Listgroupfoot();
+ 						Listcell lcf1=new Listcell();
+ 						// Listcell lcf2=new Listcell();
+ 						// Listcell lcf3=new Listcell();
+ 						Label lb1 = new Label();
+ 						lb1.setValue("จำนวน  :"+Integer.toString(vCount)+" รายการ");
+ 						lb1.setStyle("font-weight:bold; color:#1E80D2;");
+ 						lcf1.appendChild(lb1);
+ 						lf.appendChild(lcf1);
+ 						lsitm.appendChild(lf);
+ 					}catch(SQLException e){	}
+ 					
+ 				}
+ 			}catch(SQLException e){
+ 				System.out.println("Msg:"+e.getMessage());
+ 			}	
+ 			}else{
+ 				alert("กรุณาเลือกทีมก่อนครับ.");
+ 			}
+ 		}
+         public void exitpage(){
+        	 Executions.sendRedirect("mainpage.zul");
+         }
+]]>
+</zscript>
+</window>
+</zk>

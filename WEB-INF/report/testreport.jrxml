@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="testreport" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="111"/>
+	<queryString>
+		<![CDATA[call USP_Car_SearchReceiveCarDaily()]]>
+	</queryString>
+	<field name="DocNo" class="java.lang.String"/>
+	<field name="DocDate" class="java.sql.Timestamp"/>
+	<field name="ARCode" class="java.lang.String"/>
+	<field name="CarProvince" class="java.lang.String"/>
+	<field name="CarLicense" class="java.lang.String"/>
+	<field name="CarBrand" class="java.lang.String"/>
+	<field name="CarModel" class="java.lang.String"/>
+	<field name="CarType" class="java.lang.String"/>
+	<field name="InsuranceCode" class="java.lang.String"/>
+	<field name="InsuranceNo" class="java.lang.String"/>
+	<field name="InsuranceType" class="java.lang.Integer"/>
+	<field name="PaymentType" class="java.lang.Integer"/>
+	<field name="AppointmentNo" class="java.lang.String"/>
+	<field name="QuotationNo" class="java.lang.String"/>
+	<field name="MyDescription" class="java.lang.String"/>
+	<field name="SaleCode" class="java.lang.String"/>
+	<field name="IsConfirm" class="java.lang.Integer"/>
+	<field name="IsCancel" class="java.lang.Integer"/>
+	<field name="IsQuotation" class="java.lang.Integer"/>
+	<field name="SendDate" class="java.sql.Timestamp"/>
+	<field name="ReceiveDate" class="java.sql.Timestamp"/>
+	<field name="RepairAmount" class="java.lang.Double"/>
+	<field name="ConditionAmount" class="java.lang.Double"/>
+	<field name="OilLevel" class="java.lang.Long"/>
+	<field name="MileID" class="java.lang.String"/>
+	<field name="CarLicenseNoCopy" class="java.lang.Integer"/>
+	<field name="CarNumberCopy" class="java.lang.Integer"/>
+	<field name="InsuranceNoCopy" class="java.lang.Integer"/>
+	<field name="ARName" class="java.lang.String"/>
+	<field name="PicLocation" class="java.lang.String"/>
+	<field name="ItemCode" class="java.lang.String"/>
+	<field name="ItemName" class="java.lang.String"/>
+	<field name="Qty" class="java.lang.Double"/>
+	<field name="UnitCode" class="java.lang.String"/>
+	<field name="ItemType" class="java.lang.Integer"/>
+	<field name="ItemZone" class="java.lang.Integer"/>
+	<field name="WHCode" class="java.lang.String"/>
+	<field name="ShelfCode" class="java.lang.String"/>
+	<field name="IDCardNo" class="java.lang.String"/>
+	<field name="Address" class="java.lang.String"/>
+	<field name="Telephone" class="java.lang.String"/>
+	<field name="Mobile" class="java.lang.String"/>
+	<field name="Fax" class="java.lang.String"/>
+	<field name="Email" class="java.lang.String"/>
+	<field name="CarCode" class="java.lang.String"/>
+	<field name="CarColor" class="java.lang.String"/>
+	<field name="cargroup" class="java.lang.Integer"/>
+	<field name="salename" class="java.lang.String"/>
+	<field name="InsuranceName" class="java.lang.String"/>
+	<field name="CarTypeName" class="java.lang.String"/>
+	<field name="SaleTelephone" class="java.lang.String"/>
+	<field name="companyname" class="java.lang.String"/>
+	<field name="companyaddress" class="java.lang.String"/>
+	<field name="companytelephone" class="java.lang.String"/>
+	<field name="companyfax" class="java.lang.String"/>
+	<variable name="ConditionAmount_1" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{ConditionAmount}]]></variableExpression>
+	</variable>
+	<variable name="ConditionAmount_2" class="java.lang.Double" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{ConditionAmount}]]></variableExpression>
+	</variable>
+	<variable name="CarProvince_1" class="java.lang.Integer" resetType="Page" calculation="Count">
+		<variableExpression><![CDATA[$F{CarProvince}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="79" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="61" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="125" splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch">
+			<textField>
+				<reportElement x="319" y="0" width="196" height="52"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.Double"><![CDATA[$V{ConditionAmount_2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="155" y="0" width="118" height="51"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.Integer"><![CDATA[$V{CarProvince_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

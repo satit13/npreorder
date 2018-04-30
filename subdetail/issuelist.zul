@@ -1,0 +1,259 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="รายการข้อเสนอแนะ" border="normal" onCreate="checkuserlogin();">
+<zscript>
+<![CDATA[
+   import java.io.*;
+   import java.sql.*;
+   import java.lang.*;
+   import javax.servlet.http.Cookie;
+   import javax.servlet.http.HttpServletRequest;
+   import javax.servlet.http.HttpServletResponse; 
+   import java.text.SimpleDateFormat;
+   
+   String vserver;
+   String vdbname;
+   String vurl;
+   String vuser;
+   String vpassword;
+   String vprofit;
+   String vtitle;
+   String vmsg;
+   String isid;
+   String vansw;
+   String sscode;
+   String vid;
+   
+   Connection vconn;
+   
+   vserver="//192.168.0.7:1433;";
+   vdbname="bcnp";
+   //vuser="panuvich";
+   //vpassword="thaikom$$";
+   Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+   SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+   
+   public void checkuserlogin(){
+	   try{
+			Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+			for (Cookie cookie : ck) {
+				if (cookie.getName().equals("cuser")) {
+					vuser =cookie.getValue();
+				}
+			}
+			for (Cookie ckps : ck) {
+				if (ckps.getName().equals("cpass")) {
+					vpassword =ckps.getValue();
+				}
+			}
+			for (Cookie ckpf : ck) {
+				if (ckpf.getName().equals("ckprofitcode")) {
+					vprofit = ckpf.getValue();
+				}
+			}
+			if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+				//System.out.println("cookie = "+cookies);
+				Executions.sendRedirect("index.zul");		
+			} else
+			{		
+				loadissue();
+			}
+			
+			}catch (Exception e){}
+	}
+   public void publicconnection(){
+		if(vuser !="" ||  vuser!=null){
+			try{
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+			vconn =  DriverManager.getConnection(vurl, vuser, vpassword);
+			//System.out.println("connect db");
+			}catch(SQLException e){}
+		}
+	}
+   public void loadissue(){
+	   String substr1;
+	   String substr2;
+	   String substrRS;
+	   try{
+		   publicconnection();
+		   Statement st = vconn.createStatement();
+		   st.execute("Exec USP_NP_ViewIssue");
+		   ResultSet srs = st.getResultSet();
+		   while(lsissue.getItemCount()>0){
+			   lsissue.removeItemAt(0);
+		   }
+		   while(srs.next()){
+			   	Listitem si = new Listitem();
+			  	isid=srs.getString("iNumber");
+  			 	si.appendChild(new Listcell(isid));
+  			 	si.appendChild(new Listcell(srs.getString("Title")));
+  			 	substr1 = srs.getString("Detail");
+  			 	substr2 =substr1.substring(0,50);
+  				si.appendChild(new Listcell(substr2+"..."));
+  			 	si.appendChild(new Listcell(dtmformat.format(srs.getDate("Postdate"))));
+  			 	si.appendChild(new Listcell(srs.getString("userpost")));
+  			 	si.setTooltiptext("Click for detail..");
+  			 	lsissue.appendChild(si);
+		   }
+	   }catch (SQLException e){}
+   }
+   
+   public void showdetailpage(){
+	 
+		Listitem ll = new Listitem();
+		ll = lsissue.getSelectedItem();
+		Listcell ll1 =(Listcell) ll.getChildren().get(0);
+		sscode=ll1.getLabel();
+		//application.setAttribute("aisscode", sscode);
+		//Executions.createComponents("http://localhost:8080/NPReorder/subdetail/rdisuesub.zul",null, null);
+		//System.out.println(viseries);
+		//final Window winitm = (Window) Executions.createComponents("subdetail/rdisuesub.zul",null, null);    	  		
+		  	//	winitm.setMaximizable(true);
+				//winitm.doModal(); 
+		viewisue();
+		showcomment();
+		gheader.setVisible(false);
+		gdetail.setVisible(true);
+   }
+	
+   
+   //-------------------------
+    public void viewisue(){
+  			
+        	 try{
+        		 publicconnection();
+        		 Statement vs = vconn.createStatement();
+        		 vs.executeQuery("Exec USP_NP_ViewIssueDetail '"+sscode+"'");
+        		 ResultSet rs = vs.getResultSet();
+        		
+        		 while(rs.next()){
+        			 vid=rs.getString("iNumber");
+        			 lblrid.setValue(vid);
+        			 lbltt.setValue(rs.getString("Title"));
+        			 lbldt.setValue(rs.getString("Detail"));
+        			 lblpdate.setValue(dtmformat.format(rs.getDate("Postdate")));
+        			 lbluser.setValue(rs.getString("userpost"));        			
+        			 
+        		 }
+        	 }catch(SQLException e){}
+         }
+   
+   public void showcomment(){
+	   Integer n=0;
+	   viewis.getItems().clear();
+	   try{
+			 publicconnection();
+			 Statement ss = vconn.createStatement();
+			 ss.executeQuery("Exec USP_NP_ViewIssueSub '"+sscode+"'");
+			 ResultSet vrs = ss.getResultSet();
+			 while(viewis.getItemCount()>0){
+    			 viewis.removeItemAt(0);
+    		 }
+			 while(vrs.next()){
+				 n=n+1;
+				 Listitem li = new Listitem();
+				 li.appendChild(new Listcell(Integer.toString(n)));
+				 li.appendChild(new Listcell(vrs.getString("rddetail")));
+				 li.appendChild(new Listcell(vrs.getString("updateby")));
+				 li.appendChild(new Listcell(dtmformat.format(vrs.getDate("lasteditdate"))));
+				 li.setStyle("background:#8FFD4C");
+				 viewis.appendChild(li);
+			 }
+		 }catch(SQLException e){}
+   }
+         //บันทึกการแก้ไข
+         public void takemsgsub(){
+        	 	vmsg = txtqt.getValue();
+      	   	   try{
+      		   publicconnection();
+      		   Statement s = vconn.createStatement();
+      		   s.execute("exec USP_NP_ReorderIssueSub '"+sscode+"','"+vmsg+"','"+vuser+"'");
+      		   alert("ส่งข้อมูลเรียบร้อยแล้ว");
+      		 	txtqt.setValue("");
+      		 	showcomment();
+      	   }catch(SQLException e){}
+      	   
+         }
+         
+         void clrtxtq(){
+        	 txtqt.setValue("");        	
+        	 
+         }
+         void wllbeback(){
+        	 
+        	 //final Window winitm = (Window) Executions.createComponents("subdetail/issuelist.zul",null, null);
+        	 gheader.setVisible(true);
+        	 gdetail.setVisible(false);        	
+         }
+         void modalnewissue(){
+        	 final Window winiss = (Window) Executions.createComponents("subdetail/rdissue.zul",null, null);
+			  winiss.doModal();	
+         }
+  
+
+   ]]>
+   </zscript>
+   <groupbox id="gheader">
+   <hbox><image src="/subdetail/img/newissue.png" />
+   <image src="/subdetail/img/gobtn.png" onClick="modalnewissue()" />
+   </hbox>
+   <listbox id="lsissue" onSelect="showdetailpage()">
+	<listhead>
+		<listheader label="ID" width="50px" sort="auto" />
+		<listheader label="หัวข้อ" width="300px" sort="auto" />
+		<listheader label="รายละเอียด" sort="auto" />
+		<listheader label="วันที่" width="120px" sort="auto" />
+		<listheader label="ผู้สร้าง" width="150px" sort="auto" />
+	</listhead>	
+</listbox>
+</groupbox>
+<!-- Detail -->
+<groupbox id="gdetail" visible="false">
+<groupbox>
+<grid>
+		<columns>
+			<column label="" width="150px"/>
+			<column label=""/>
+		</columns>
+		<rows>
+			<row><hbox><label id="lblrid" visible="false"/><label value="หัวข้อ :" /></hbox><label id="lbltt" style="font-weight:bold; color:red;"/> 	
+			</row>
+			<row><label value="รายละเอียด :"/><label id="lbldt" />
+			</row>
+			<row><label value="ผู้แจ้ง :"/><hbox><label id="lbluser" /><label value=" วันที่  : "/><label id="lblpdate" /></hbox> 
+			</row>
+			
+		</rows>
+	</grid>
+</groupbox>
+
+<groupbox>
+<hbox><label value="รายการความคิดเห็นหัวข้อนี้" style="font-size:11; font-weight:bold; color:#E50020"/></hbox>
+<listbox id="viewis">
+	<listhead>
+		<listheader label="" width="50px" sort="auto" />
+		<listheader label="" sort="auto" />
+		<listheader label="" width="100px" sort="auto" />
+		<listheader label="" width="100px" sort="auto" />
+</listhead>
+</listbox>
+ </groupbox>
+ <groupbox width="500px">
+<grid >
+		<columns>
+			<column label="แสดงความเห็น วิธีแก้ไขปัญหา ตอบข้อสงสัย"/>
+			
+		</columns>
+		<rows>
+			<row><textbox id="txtqt" multiline="true" rows="5" cols="78"/>
+			</row>
+			<row><hbox><button label="ส่งข้อมูล" onClick="takemsgsub();" />
+			<button label="ยกเลิก" onClick="clrtxtq();" />
+			<button label="กลับ" onClick="wllbeback()" />
+			</hbox></row>
+		</rows>
+	</grid>
+</groupbox>
+</groupbox>
+</window>
+</zk>

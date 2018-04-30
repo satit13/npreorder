@@ -1,0 +1,99 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="new page title" border="normal" onCreate="checkuserlogin()">
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vprofit;
+String vuserlevel;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";  
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+public void checkuserlogin(){
+	try{
+		Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+		for (Cookie cookie : ck) {
+			if (cookie.getName().equals("cuser")) {
+				vuser =cookie.getValue();
+			}
+		}
+		for (Cookie ckps : ck) {
+			if (ckps.getName().equals("cpass")) {
+				vpassword =ckps.getValue();
+			}
+		}
+		for (Cookie cklv : ck) {
+			if (cklv.getName().equals("ulevel")) {
+				vuserlevel = cklv.getValue();
+			}
+		}
+		for (Cookie ckpf : ck) {
+			if (ckpf.getName().equals("ckprofitcode")) {
+				vprofit = ckpf.getValue();
+			}
+		}
+		if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+			//System.out.println("cookie = "+cookies);
+			Executions.sendRedirect("index.zul");		
+		} else
+		{		
+			viewuserlog();
+		}
+		
+		}catch (Exception e){}
+}
+public void viewuserlog(){
+	try{
+		Connection vconnect = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = vconnect.createStatement();
+		s.executeQuery("exec USP_NP_ReorderUsedReport");
+		ResultSet rs = s.getResultSet();
+		while(lsreorderlog.getItemCount()>0){
+			lsreorderlog.removeItemAt(0);
+		}
+		while(rs.next()){
+			Listitem gli= new Listitem();
+			gli.appendChild(new Listcell(dtmformat.format(rs.getDate("countdate"))));
+			gli.appendChild(new Listcell(numformat.format(Double.parseDouble(rs.getString("countlogin")))));
+			gli.appendChild(new Listcell(numformat.format(Double.parseDouble(rs.getString("countadjust")))));
+			gli.appendChild(new Listcell(numformat.format(Double.parseDouble(rs.getString("countapprove")))));
+			gli.appendChild(new Listcell(numformat.format(Double.parseDouble(rs.getString("countsgmreject")))));
+			gli.appendChild(new Listcell(numformat.format(Double.parseDouble(rs.getString("countsdreject")))));
+			lsreorderlog.appendChild(gli);			
+		}
+	}catch(SQLException e){}
+	
+}
+
+	]]>
+</zscript>
+<listbox id="lsreorderlog" mold="paging">
+	<listhead>
+		<listheader label="วันที่" width="120px" align="center" sort="desc" />
+		<listheader label="จำนวน ครั้งLogin" align="right" />
+		<listheader label="จำนวน ครั้ง Adjust" align="right"  />
+		<listheader label="จำนวน ครั้งอนุมัติ" align="right"  />
+		<listheader label="จำนวน ครั้ง SGM Reject" align="right"  />
+		<listheader label="จำนวน ครั้ง SD Reject" align="right"  />
+	</listhead>	
+</listbox>
+
+</window>
+</zk>

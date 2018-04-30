@@ -1,0 +1,2352 @@
+<?page title="รายการสินค้ารอพิจารณาเสนอซื้อ" contentType="text/html;charset=UTF-8"?>
+<zk xmlns:x="native">
+<style>
+	.txlabel{
+		font-size:12px;
+	}
+</style>
+<window title="" border="normal" onCreate="checkuserlogin(); viewpage();">
+
+<div>
+
+</div>
+<div align="center">
+<groupbox id="gbp01" width="1000px">
+<div align="center">
+<groupbox>
+<div align="left" >
+<vbox>
+<image id="imgp" />
+<label id="lblan" visible="false"/>
+</vbox>
+</div>
+</groupbox>
+</div>
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vprofit;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+String bcuser;
+String bcpass;
+
+
+
+// set format
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("###0.00");
+DecimalFormat normalf = new DecimalFormat("###0");
+DecimalFormat cmformat = new DecimalFormat("#,##0.00");
+// set Class connect SQL jdbc
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+//public var
+Connection vConnectdb;
+String pvsaleteamcode="";
+String pvdepartmentcode="";
+String pvapcode="";
+String pvworkmancode="";
+String pvstartdate="";
+String pvstopdate="";
+String pvdocno="";
+
+Comboitem cbdep;
+String slitem;
+
+public void publicconnection(){
+	try{
+		if(vuser !="" ||  vuser!=null){
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+			vConnectdb =  DriverManager.getConnection(vurl, vuser, vpassword);
+			//System.out.println("connect db");
+		}
+	}catch(Exception e){
+		e.printStackTrace();
+	}
+
+}
+
+public void checkuserlogin(){
+	try{
+		Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+		for (Cookie cookie : ck) {
+			if (cookie.getName().equals("cuser")) {
+				vuser = cookie.getValue().trim();
+			}
+		}
+		for (Cookie ckps : ck) {
+			if (ckps.getName().equals("cpass")) {
+				vpassword =ckps.getValue().trim();
+				
+			}
+		}
+		for (Cookie ckpf : ck) {
+			if (ckpf.getName().equals("ckprofitcode")) {
+				vprofit = ckpf.getValue().trim();
+				
+			}
+		}
+		if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+			//System.out.println("cookie = "+cookies);
+			Executions.sendRedirect("index.zul");		
+		} else
+		{		
+			loadsaleteam();		
+		}
+		
+		}catch (Exception e){}
+}
+
+
+// combobox SaleTeam
+public void loadsaleteam(){
+	try {
+	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_pr_searchsaleteam_Cat");
+		ResultSet rs = s.getResultSet();
+		while(rs.next()){
+			Comboitem cbxitm = new Comboitem();
+			cbxitm.setLabel(rs.getString("saleteam"));
+			cbxitm.setValue(rs.getString("expertcode"));				
+			cmbsaleteam.appendChild(cbxitm);		
+		}
+		cmbdepartment.setText("");
+		
+	} catch (SQLException e){}
+	
+}
+
+// combobox Department
+public void loaddepartment(){
+	cmbdepartment.setText("");
+	cmbdepartment.getItems().clear();
+	slitem = cmbsaleteam.getSelectedItem().getValue().toString();
+try {
+	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sd = conn.createStatement();
+		sd.executeQuery("exec USP_PR_SearchDepartment_Profit '"+vprofit+"','"+slitem+"'");
+		ResultSet rsd = sd.getResultSet();
+		while(rsd.next()){
+			cbdep = new Comboitem();
+			cbdep.setLabel(rsd.getString("departname"));
+			cbdep.setValue(rsd.getString("departmentcode"));				
+			cmbdepartment.appendChild(cbdep);			
+		}
+	} catch (SQLException e){}
+}
+
+// load Section
+public void loadsection(){
+	String vsection;
+	
+try {
+		//cmbsection.getItems().clear();
+		vsection = cmbsaleteam.getSelectedItem().getValue().toString();	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sc = conn.createStatement();
+		sc.executeQuery("exec USP_PR_SearchSection_Profit '"+vprofit+"','"+vsection+"'");
+		ResultSet rsc = sc.getResultSet();
+		while(rsc.next()){
+			Comboitem cbsec = new Comboitem();
+			cbsec.setLabel(rsc.getString("sectionname"));
+			cbsec.setValue(rsc.getString("sectionid"));				
+			//cmbsection.appendChild(cbsec);			
+		}
+	} catch (SQLException e){}
+}
+
+// Clear SearchBox
+public void clrfilterbox(){
+	if(cmbsaleteam.getSelectedIndex()>-1){
+		cmbsaleteam.setText("");
+	}
+	
+	if(cmbdepartment.getSelectedIndex()>-1){
+		cmbdepartment.setText("");		
+	}	
+	lsitems.getItems().clear();
+	lspr.getItems().clear();
+	lsprcon.getItems().clear();
+	sapcx.setChecked(false);
+	sclcx.setChecked(false);
+	sapcx.setDisabled(false);
+	sapcx.setDisabled(false);
+	intbItem.setValue(0);
+}
+   
+//List ITEM Master
+public void loaditemlist(){
+	Integer x=0;
+	Integer n=0;
+	Integer vaj=0;
+	String stradjqty;
+	String strqty;
+	
+	String vbitemcode;
+	String vbadjustqty;
+	String vbunitcode;
+	String vbdocno;
+	String vbdocdate;
+	String vblinenumber;
+	String vbapcode;
+
+	try {
+		if(cmbsaleteam.getSelectedIndex()>=0){
+			pvsaleteamcode =cmbsaleteam.getSelectedItem().getValue().toString();			
+			}else{pvsaleteamcode="";}
+		if(cmbdepartment.getText()!=""){
+			pvdepartmentcode = cmbdepartment.getSelectedItem().getValue().toString();
+				n=cmbdepartment.getSelectedIndex();				
+				System.out.println("pvdept ="+pvdepartmentcode+"n ="+n);			
+			}else{pvdepartmentcode="";}
+					
+			
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sitm = conn.createStatement();
+			sitm.executeQuery("exec usp_pr_StockRequestDaily_Profit '"+vprofit+"',0,'"+pvsaleteamcode+"',"+
+					" '"+pvapcode+"','"+pvdepartmentcode+"','"+pvdocno+"' ");
+			ResultSet rsitm = sitm.getResultSet();
+			while(lsitems.getItemCount()>0){
+				lsitems.removeItemAt(0);	
+			}
+			while(rsitm.next()){
+				x+=1;
+				Listitem litm = new Listitem();
+				litm.appendChild(new Listcell(Integer.toString(x)));
+				litm.appendChild(new Listcell(rsitm.getString("itemcode")));
+				litm.appendChild(new Listcell(rsitm.getString("itemname")));
+				strqty=rsitm.getString("qty");
+				Listcell lcqty = new Listcell(numformat.format(Double.parseDouble(strqty)));
+				litm.appendChild(lcqty);
+				
+				stradjqty = rsitm.getString("adjustqty1");
+				vaj= rsitm.getInt("isadjust1");
+				if(vaj==1){
+					stradjqty=stradjqty;
+					Listcell lcadj = new Listcell(numformat.format(Double.parseDouble(stradjqty)));
+					lcadj.setStyle("color: red; font-weight: bold;");
+					litm.appendChild(lcadj);
+					litm.setStyle("background:#F9D27F");
+				}else{
+					stradjqty=strqty;
+					Listcell lcadj = new Listcell(numformat.format(Double.parseDouble(stradjqty)));
+					lcadj.setStyle("color: blue; font-weight: bold;");
+					litm.appendChild(lcadj);
+				}	
+				
+				//lcx.appendChild();
+								
+				litm.appendChild(new Listcell(rsitm.getString("unitcode")));
+				litm.appendChild(new Listcell(numformat.format(Double.parseDouble(rsitm.getString("stockqty")))));
+				litm.appendChild(new Listcell(rsitm.getString("departname")));
+				litm.appendChild(new Listcell(rsitm.getString("apname")));
+				litm.appendChild(new Listcell(rsitm.getString("docno")));
+				litm.appendChild(new Listcell(dtmformat.format(rsitm.getDate("docdate"))));
+				litm.appendChild(new Listcell(rsitm.getString("workmanname")));
+				litm.appendChild(new Listcell(rsitm.getString("linenumber")));
+				litm.setTooltiptext("DoubleClick รายการสินค้าเพื่อดูรายละเอียดครับ.");
+				litm.addEventListener("onDoubleClick",new EventListener(){
+					public void onEvent(Event event) throws Exception{
+						vselecteditem();
+					}
+				});
+				
+				  Button DTLbtn = new Button("Adjust");// DTLbtn.setLabel("รายละเอียด PO"); DTLbtn.
+				  
+				  DTLbtn.addEventListener("onClick", new EventListener() {
+						public void onEvent(Event event) throws Exception {
+ 
+							Listitem iar = new Listitem();
+							iar = lsitems.getSelectedItem();
+							
+							//String a = idata.getLabel();	
+							Listcell lar1 = (Listcell) iar.getChildren().get(1);
+							Listcell lar4 = (Listcell) iar.getChildren().get(4);
+							Listcell lar5 = (Listcell) iar.getChildren().get(5);
+							Listcell lar9 = (Listcell) iar.getChildren().get(9);
+							Listcell lar10 = (Listcell) iar.getChildren().get(10);
+							Listcell lar12 = (Listcell) iar.getChildren().get(12);
+							Listcell lar14 = (Listcell) iar.getChildren().get(14);
+							vbitemcode= lar1.getLabel();
+							vbadjustqty = lar4.getLabel();
+							vbunitcode = lar5.getLabel();
+							vbdocno = lar9.getLabel();	
+							
+							String vgdocdate;
+							//set date time
+							vgdocdate =  lar10.getLabel();
+							vyear = vgdocdate.substring(6);
+							String vdate=vgdocdate.substring(0,6);
+					   		Integer xInt1 = Integer.parseInt(vyear);
+					   		if (xInt1 > 2500){
+					   			Integer bInt= xInt1-543;
+					   			vyear1= Integer.toString(bInt);
+					   		}else {
+					   			vyear1= Integer.toString(xInt1);
+					   		}
+					   		vbdocdate=vdate.concat(vyear1);   		
+							
+							vblinenumber = lar12.getLabel();
+							vbapcode = lar14.getLabel();							
+							try{
+							publicconnection();
+							Statement sad = vConnectdb.createStatement();
+							//sad.execute("");
+							sad.execute("exec usp_pr_InsertstkRequestext_Profit 0,'"+vbdocno+"','"+vbdocdate+"','"+vbitemcode+"',"+vbadjustqty+",'"+vbunitcode+"','"+vbapcode+"','"+vuser+"',"+vblinenumber+",'-'"+
+											" exec USP_NP_Roderlog  0,1,0,0,0");
+							//logadQTY();
+							//ResultSet rs = sad.getResultSet(); 
+							iar.setStyle("background:#ECDB8C");
+							//alert("Color Change");
+							DTLbtn.setDisabled(true);
+							//alert(vbdocno+"-"+ vbdocdate +"-"+ vbitemcode+"-"+vbadjustqty+"-"+vbunitcode);
+							}catch(SQLException e){}
+						}
+					});
+							 DTLbtn.setDisabled(true);
+							  Listcell cll1 = new Listcell();
+							  cll1.appendChild(DTLbtn);
+							  litm.appendChild(cll1);
+							  litm.addEventListener("onClick", new EventListener(){
+									public void onEvent(Event event) throws Exception{
+									DTLbtn.setDisabled(false);						
+									}
+								});
+				litm.appendChild(new Listcell(rsitm.getString("apcode")));				
+				lsitems.appendChild(litm);		
+				
+			}
+			if(lsitems.getItemCount()==0){
+				alert("ไม่พบข้อมูล กรุณาลองใหม่หรือเลือกทีมใหม่อีกครั้ง");
+			}
+			
+		} catch (SQLException e){}
+	}
+
+//-----------SGM View --------
+public void loadaproveitems(){
+	Integer x=0;
+	Integer n=0;
+	Integer vai=0;
+	Integer i=0;
+	Double vad;
+	//String stradjqty;
+	Double stradjqty;
+	String strqty;
+	String strsdadjust;
+	
+
+	try {
+		if(cmbsaleteam.getSelectedIndex()>=0){
+			pvsaleteamcode =cmbsaleteam.getSelectedItem().getValue().toString();			
+			}else{pvsaleteamcode="";}
+		if(cmbdepartment.getText()!=""){
+			pvdepartmentcode = cmbdepartment.getSelectedItem().getValue().toString();
+				n=cmbdepartment.getSelectedIndex();				
+				System.out.println("pvdept ="+pvdepartmentcode+"n ="+n);			
+			}else{pvdepartmentcode="";}		
+			
+			
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sitm = conn.createStatement();
+			sitm.executeQuery("exec usp_pr_StockRequestDaily_Profit '"+vprofit+"', 2,'"+pvsaleteamcode+"',"+
+					" '"+pvapcode+"','"+pvdepartmentcode+"','"+pvdocno+"' ");
+			ResultSet rsitm = sitm.getResultSet();
+			while(lspr.getItemCount()>0){
+				lspr.removeItemAt(0);	
+			}
+			while(rsitm.next()){
+				x+=1;
+				Listitem litm = new Listitem();
+				litm.appendChild(new Listcell(Integer.toString(x)));
+				litm.appendChild(new Listcell(Integer.toString(x)));
+				Listcell lcap = new Listcell();
+				Listcell lccl = new Listcell();
+				Checkbox cxap = new Checkbox();
+				Checkbox cxcl = new Checkbox();
+				Doublebox apvqty = new Doublebox();
+				cxap.addEventListener("onCheck",new EventListener(){
+					public void onEvent(Event event) throws Exception{
+						if(cxap.isChecked()==true){
+							i+=1;
+							cxcl.setDisabled(true);
+							cxcl.setChecked(false);
+							apvqty.setDisabled(true);
+						}
+							else { 
+								i-=1; 
+								cxcl.setDisabled(false);
+								apvqty.setDisabled(false);
+								}
+					
+						if(i<=0){
+							litm.setSelected(false);
+						}else {
+							litm.setSelected(true);
+						}
+					}
+				});
+				
+				cxcl.addEventListener("onCheck", new EventListener(){
+					public void onEvent(Event event) throws Exception{
+						if(cxcl.isChecked()==true){
+							i+=1;
+							cxap.setDisabled(true);
+							cxap.setChecked(false);
+							apvqty.setDisabled(true);
+						}else {
+							i-=1;
+							cxap.setDisabled(false);
+							apvqty.setDisabled(false);
+						}
+						if(i<=0){
+							litm.setSelected(false);
+						}else {
+							litm.setSelected(true);	
+						}
+						
+					}
+				});
+					
+				lcap.appendChild(cxap);
+				lccl.appendChild(cxcl);
+				litm.appendChild(lcap);
+				litm.appendChild(lccl);
+				litm.appendChild(new Listcell(rsitm.getString("itemcode")));
+				litm.appendChild(new Listcell(rsitm.getString("itemname")));
+				strqty=rsitm.getString("qty");
+				Listcell lcqty = new Listcell(cmformat.format(Double.parseDouble(strqty)));
+				litm.appendChild(lcqty);
+				
+				strsdadjust= rsitm.getString("adjustqty1");
+				Listcell lcsdadj = new Listcell(cmformat.format(Double.parseDouble(strsdadjust)));
+				lcsdadj.setStyle("color: #C96D00; font-weight: bold;");
+				
+				litm.appendChild(lcsdadj);
+				vad = Double.parseDouble(strsdadjust);
+				if(vad==0.00){
+					// litm.setStyle("background:#9B0C0C; font-size:8; color:#FFFFFF");
+				}				
+				stradjqty = rsitm.getDouble("adjustqty2");
+				vai= rsitm.getInt("isadjust2");
+				Listcell lcadj = new Listcell();
+				if(vai==1){
+					stradjqty=Double.parseDouble(strqty);					
+					apvqty.setWidth("80px");
+					apvqty.setStyle("text-align:right; color: blue; font-weight: bold;");
+					apvqty.setFormat("#,##0.00");
+					apvqty.setValue(stradjqty);
+					lcadj.appendChild(apvqty);
+					litm.appendChild(lcadj);
+				}else{
+					stradjqty= Double.parseDouble(strqty);
+					// Doublebox apqty = new Doublebox();
+					apvqty.setWidth("80px");
+					apvqty.setStyle("text-align:right; color: blue; font-weight: bold;");
+					apvqty.setFormat("#,##0.00");
+					apvqty.setValue(stradjqty);
+					lcadj.appendChild(apvqty);
+					litm.appendChild(lcadj);
+				}					
+				//lcx.appendChild();								
+				litm.appendChild(new Listcell(rsitm.getString("unitcode")));
+				litm.appendChild(new Listcell(numformat.format(Double.parseDouble(rsitm.getString("stockqty")))));
+				litm.appendChild(new Listcell(rsitm.getString("departname")));
+				litm.appendChild(new Listcell(rsitm.getString("apname")));
+				litm.appendChild(new Listcell(rsitm.getString("docno")));
+				litm.appendChild(new Listcell(dtmformat.format(rsitm.getDate("docdate"))));
+				litm.appendChild(new Listcell(rsitm.getString("workmanname")));
+				litm.appendChild(new Listcell(rsitm.getString("linenumber")));	
+				//}--------------------
+				Button btnapvd = new Button("อนุมัติ");
+				btnapvd.addEventListener("onClick", new EventListener(){
+					public void onEvent(Event event) throws Exception{
+						SGMApproveQTYinline();
+					}
+				});
+				
+				Button btnReject = new Button("ยกเลิกการซื้อสินค้านี้");// DTLbtn.setLabel("รายละเอียด PO"); DTLbtn.
+				  
+				  btnReject.addEventListener("onClick", new EventListener() {
+						public void onEvent(Event event) throws Exception {
+							  
+							Messagebox.show("คุณแน่ใจว่าจะยกเลิกรายการนี้ ?",
+									    "Question", Messagebox.OK | Messagebox.CANCEL,
+									    Messagebox.QUESTION,
+									        new org.zkoss.zk.ui.event.EventListener(){
+									            public void onEvent(Event e){
+									                if("onOK".equals(e.getName())){
+									                	sgmCancelitem();
+									                }
+									            }
+											});
+								}
+					});	
+				  btnapvd.setVisible(false);
+				  btnReject.setDisabled(true);
+				  Hbox ivbx = new Hbox();
+				  ivbx.appendChild(btnapvd);
+				  ivbx.appendChild(btnReject);
+				  Listcell cll1 = new Listcell();
+				  cll1.appendChild(ivbx);
+				  litm.appendChild(cll1);
+				  litm.addEventListener("onClick", new EventListener(){
+						public void onEvent(Event event) throws Exception{
+							btnapvd.setDisabled(false);
+							btnReject.setDisabled(false);						
+					}
+				});
+				 litm.appendChild(new Listcell(rsitm.getString("apcode")));
+				 Listcell lcclick = new Listcell();				 
+				 lcclick.setLabel("คลิกดูรายละเอียด");
+				 lcclick.setStyle("font-size:normal; color:#F00362;");
+				 lcclick.addEventListener("onClick", new EventListener(){
+					public void onEvent(Event event) throws Exception {
+						unSelectAll();
+						litm.setSelected(true);
+						SGMslaprove();
+						loadapprovedetail();
+						shelfinfo();
+					}
+				 });
+				 litm.appendChild(lcclick);
+				lspr.appendChild(litm);				
+			}
+			if(lspr.getItemCount()==0){
+				alert("ไม่พบข้อมูลค้างอนุมัติ กรุณาเลือกทีมใหม่อีกครั้ง");
+			}
+			showSeachCount();
+		} catch (SQLException e){}
+	}
+	public void unSelectAll(){
+		try{
+			for(int x=0; x<lspr.getItemCount();x++){
+				Listitem li = new Listitem();
+				li = lspr.getItemAtIndex(x);
+				li.setSelected(false);
+			}
+		}catch(Exception e){}
+	}
+	//------------------------------------------------------------------------------Check Box Approve multiItem--------------------
+	public void sCheckValue(){
+		Boolean vap;
+		Boolean vcl;
+		
+		String getdocdate;
+		String vyear;
+		String vyear2;
+		String vDocDate;
+		String vDocNo;
+		String vItemCode;
+		String vItemName;
+		Double vQty;
+		String vFQty;
+		String vUnitCode;
+		String vApcode;
+		String vLineNumber;
+		String vqry1;
+		String vqry2;
+		String vQry3;
+		
+		String stQry;
+		
+		try{
+			
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			
+			sCheckAction();
+			for(int i=0; i<lspr.getItemCount();i++){
+				Listitem sli = new Listitem();
+				sli = lspr.getItemAtIndex(i);
+				
+				if(sli.isSelected()==true){
+					
+					Listcell lc1 =(Listcell) sli.getChildren().get(2);
+					Listcell lc2 =(Listcell) sli.getChildren().get(3);
+					
+					vap=((Checkbox) lc1.getChildren().get(0)).isChecked();
+					vcl=((Checkbox) lc2.getChildren().get(0)).isChecked();
+					
+					Listcell lc01 = (Listcell) sli.getChildren().get(4); //itemcode
+	    		   	Listcell lc05 = (Listcell) sli.getChildren().get(8); //qty
+	    		   	Listcell lc06 = (Listcell) sli.getChildren().get(9); //unitcode
+	    		   	Listcell lc09 = (Listcell) sli.getChildren().get(18); //apcode
+	    		   	Listcell lc11 = (Listcell) sli.getChildren().get(13); //docno
+	    		   	Listcell lc12 = (Listcell) sli.getChildren().get(14); //docdate
+	    		   	Listcell lc14 = (Listcell) sli.getChildren().get(16); //linenumber
+	    		////set date time
+	    			System.out.println("isTrue");
+					getdocdate =  lc12.getLabel();
+					vyear = getdocdate.substring(6);
+					String vdate=getdocdate.substring(0,6);
+			   		Integer xInt1 = Integer.parseInt(vyear);
+				   		if (xInt1 > 2500){
+				   			Integer bInt= xInt1-543;
+				   			vyear2= Integer.toString(bInt);
+				   		}else {
+				   			vyear2= Integer.toString(xInt1);
+				   		}
+			   			vDocDate=vdate.concat(vyear2);
+			   			System.out.println("isTrue+"+vDocDate);
+	    		   	///--------------
+	    		   	
+	    		   	vItemCode = lc01.getLabel();
+	    		   	vQty = ((Doublebox)lc05.getChildren().get(0)).getValue();
+	    		   	vFQty = numformat.format(vQty);
+	    		   	System.out.println("isTrue+fqy+"+vFQty);
+	    		   	vUnitCode= lc06.getLabel();
+	    		   	vApcode = lc09.getLabel();
+	    		   	vDocNo = lc11.getLabel();
+	    		   	vLineNumber = lc14.getLabel();	    		   
+	    		   			//อนุมัติรายการสินค้า
+							if(vap==true){
+								//alert("Approve Item");	
+				    			Statement stp = conn.createStatement();
+								vqry1="exec usp_pr_InsertstkRequestext_Profit 1,'"+vDocNo+"','"+vDocDate+"','"+vItemCode+"','"+vFQty+"','"+vUnitCode+"','"+vApcode+"','"+vuser+"',"+vLineNumber+",'-'";
+								System.out.println("Q="+vqry1);
+				    			stp.execute(vqry1);
+				    			
+				    			vqry2="exec usp_pr_InsertstkRequestext_Profit 2,'"+vDocNo+"','"+vDocDate+"','"+vItemCode+"','"+vFQty+"','"+vUnitCode+"','"+vApcode+"','"+vuser+"',"+vLineNumber+",'-'";
+				    			System.out.println(vqry2);
+				    			stp.execute(vqry2);	   			 			
+						    		
+								Statement stsd = conn.createStatement();		
+								vQry3="exec usp_pr_consolidateprvendor_Profit '"+vuser+"'"+
+												  " exec USP_NP_UpdateStkRequestStatus"+
+												  " exec USP_NP_Roderlog  0,0,1,0,0";
+								stsd.execute(vQry3);
+								
+								} 
+								//ยกเลิกรายการสินค้า
+								if(vcl==true){
+									//alert("Cancel Item");
+										Statement stc = conn.createStatement();
+				    					stQry="exec usp_pr_InsertstkRequestext_Profit 3,'"+vDocNo+"','"+vDocDate+"','"+vItemCode+"','"+vFQty+"','"+vUnitCode+"','"+vApcode+"','"+vuser+"',"+vLineNumber+",'-'";
+				    					System.out.println("ยกเลิก ="+stQry);
+				    					stc.execute(stQry);  		
+				    					
+									}
+							}
+					}
+			loadaproveitems();
+			
+		} catch(Exception e){}
+	}
+
+	public void sCheckAction(){
+		boolean ap;
+		boolean cl;
+		try{
+			for(int x=0; x<lspr.getItemCount(); x++){
+				Listitem li = new Listitem();
+				li = lspr.getItemAtIndex(x);
+				Listcell lcap = (Listcell) li.getChildren().get(2);
+				Listcell lccl = (Listcell) li.getChildren().get(3);
+				ap = ((Checkbox) lcap.getChildren().get(0)).isChecked();
+				cl = ((Checkbox) lccl.getChildren().get(0)).isChecked();
+				if((ap==true)||(cl==true)){
+					li.setSelected(true);
+				}else
+				{
+					li.setSelected(false);
+				}
+			}
+		}catch(Exception ex){}
+	}
+
+	public void sAPAll(){
+		boolean ca;
+		boolean cc;
+		try{
+			
+			if(sapcx.isChecked()==true){
+				sclcx.setChecked(false);
+				sclcx.setDisabled(true);			
+				
+				for(int x=0;x<lspr.getItemCount();x++){
+					Listitem apli = new Listitem();
+					apli = lspr.getItemAtIndex(x);
+					Listcell lca = (Listcell) apli.getChildren().get(2);
+					Listcell lcb = (Listcell) apli.getChildren().get(3);
+					Listcell lcq = (Listcell) apli.getChildren().get(8);
+					ca=((Checkbox) lca.getChildren().get(0)).isChecked();
+					cc=((Checkbox) lcb.getChildren().get(0)).isChecked();
+					if(ca==true || cc==true){
+						
+					}else
+					{
+						((Checkbox) lca.getChildren().get(0)).setChecked(true);
+						((Checkbox) lcb.getChildren().get(0)).setChecked(false);
+						((Doublebox) lcq.getChildren().get(0)).setDisabled(true);
+						sclcx.setChecked(false);
+						apli.setSelected(true);
+					}
+					
+				}
+			}else 
+			{
+				
+				for(int x=0; x<lspr.getItemCount();x++){
+					Listitem apli = new Listitem();
+					apli = lspr.getItemAtIndex(x);
+					Listcell lca = (Listcell) apli.getChildren().get(2);
+					Listcell lcq = (Listcell) apli.getChildren().get(8);
+					((Checkbox) lca.getChildren().get(0)).setChecked(false);
+					((Doublebox) lcq.getChildren().get(0)).setDisabled(false);
+					apli.setSelected(false);
+				}
+				sclcx.setDisabled(false);
+			}
+		}catch(Exception e){}
+	}
+	public void sCLAll(){
+		boolean vca;
+		boolean vcb;
+		try{
+			if(sclcx.isChecked()==true){
+				sapcx.setChecked(false);
+				sapcx.setDisabled(true);
+				for(int x=0; x<lspr.getItemCount();x++){
+					Listitem apli = new Listitem();
+					apli = lspr.getItemAtIndex(x);
+					Listcell lca = (Listcell) apli.getChildren().get(2);
+					Listcell lcb = (Listcell) apli.getChildren().get(3);
+					Listcell lcq = (Listcell) apli.getChildren().get(8);
+					vca=((Checkbox) lca.getChildren().get(0)).isChecked();
+					vcb=((Checkbox) lcb.getChildren().get(0)).isChecked();
+					if(vca==true || vcb==true){
+						
+					}else{
+						((Checkbox) lca.getChildren().get(0)).setChecked(false);
+						((Checkbox) lcb.getChildren().get(0)).setChecked(true);
+						((Doublebox) lcq.getChildren().get(0)).setDisabled(true);
+						sapcx.setChecked(false);
+						apli.setSelected(true);
+					}
+					
+				}
+			}else
+			{
+				for(int x=0; x<lspr.getItemCount(); x++){
+					Listitem apli = new Listitem();
+					apli = lspr.getItemAtIndex(x);
+					Listcell lcb = (Listcell) apli.getChildren().get(3);
+					Listcell lcq = (Listcell) apli.getChildren().get(8);
+					((Checkbox) lcb.getChildren().get(0)).setChecked(false);
+					((Doublebox) lcq.getChildren().get(0)).setDisabled(false);
+					apli.setSelected(false);
+				}
+				sapcx.setDisabled(false);
+			}
+		}catch(Exception e){}
+	}	
+	
+//--------------------------------------------------------------End v.592012----------------------------------
+public void sgmCancelitem(){
+	String CLqry;
+	String rjdocno;
+	String rjitemcode;
+	String rjdocdate;
+	Double rjadqty;
+	String rjunitcode;
+	String rjapcode;
+	String rjline;
+	String vrjdocdate;
+	
+	Listitem iar = new Listitem();
+	iar = lspr.getSelectedItem();
+	
+	//String a = idata.getLabel();	
+		Listcell lar1 = (Listcell) iar.getChildren().get(1);
+		Listcell lar5 = (Listcell) iar.getChildren().get(5);
+		Listcell lar6 = (Listcell) iar.getChildren().get(6);
+		Listcell lar10 = (Listcell) iar.getChildren().get(10);
+		Listcell lar11 = (Listcell) iar.getChildren().get(11);
+		Listcell lar13 = (Listcell) iar.getChildren().get(13);
+		Listcell lar15 = (Listcell) iar.getChildren().get(18);
+		rjitemcode= lar1.getLabel();
+		rjadqty = ((Doublebox)lar5.getChildren().get(0)).getValue();
+		numformat.format(rjadqty);
+		//rjadqty = lar5.getLabel();
+		rjunitcode = lar6.getLabel();
+		rjdocno = lar10.getLabel();	
+		rjdocdate = lar11.getLabel();
+		rjline = lar13.getLabel();
+		rjapcode = lar15.getLabel();	
+		vyear = rjdocdate.substring(6);
+		String vdate=rjdocdate.substring(0,6);
+			Integer xInt1 = Integer.parseInt(vyear);
+			if (xInt1 > 2500){
+				Integer bInt= xInt1-543;
+				vyear1= Integer.toString(bInt);
+			}else {
+				vyear1= Integer.toString(xInt1);
+			}
+			vrjdocdate=vdate.concat(vyear1);   		
+	
+
+			try{
+				publicconnection();
+				Statement sad = vConnectdb.createStatement();
+				CLqry="exec usp_pr_InsertstkRequestext_Profit 3,'"+rjdocno+"','"+vrjdocdate+"','"+rjitemcode+"',"+rjadqty+",'"+rjunitcode+"','"+rjapcode+"','"+vuser+"',"+rjline+",'-'"+
+						" exec USP_NP_Roderlog  0,0,0,0,1";
+				// System.out.println(CLqry);
+				sad.execute(CLqry);
+				loadaproveitems();						
+				}catch(SQLException e){}
+
+}
+// -----------------------------------------------------------------ยกเลิกซื้อสินค้าหลายรายการ Multiple Cancel Item
+public void CancelMutiItem(){
+	String vcldocno;
+	String vcdocdate;
+	String vcldocdate;
+	String vclitemcode;
+	String vclunitcode;
+	String vclapcode;
+	String vcllineno;
+	String stQry;
+	
+	Double vclqty;
+	Integer vcls;
+	try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		
+		vcls=lspr.getItemCount();
+		if(vcls>0){
+			for(int i=0;i<vcls;i++){
+				Listitem li =new Listitem();			
+    		   	li=lspr.getItemAtIndex(i);
+    		   	if(li.isSelected()==true){
+    		   		Listcell lar1 = (Listcell) li.getChildren().get(1);
+    				Listcell lar5 = (Listcell) li.getChildren().get(5);
+    				Listcell lar6 = (Listcell) li.getChildren().get(6);
+    				Listcell lar10 = (Listcell) li.getChildren().get(10);
+    				Listcell lar11 = (Listcell) li.getChildren().get(11);
+    				Listcell lar13 = (Listcell) li.getChildren().get(13);
+    				Listcell lar15 = (Listcell) li.getChildren().get(15);
+    				
+    				vclitemcode=lar1.getLabel();
+    				vclqty = ((Doublebox)lar5.getChildren().get(0)).getValue();
+    				numformat.format(vclqty);
+    				vclunitcode = lar6.getLabel();
+    				vcldocno = lar10.getLabel();
+    				vcdocdate = lar11.getLabel();		
+    				
+    				vyear = vcdocdate.substring(6);
+    				String vdate=vcdocdate.substring(0,6);
+    					Integer xInt1 = Integer.parseInt(vyear);
+    					if (xInt1 > 2500){
+    						Integer bInt= xInt1-543;
+    						vyear1= Integer.toString(bInt);
+    					}else {
+    						vyear1= Integer.toString(xInt1);
+    					}
+    					vcldocdate=vdate.concat(vyear1);   	
+    					vcllineno = lar13.getLabel();
+    					vclapcode = lar15.getLabel();
+    					
+    					Statement stc = conn.createStatement();
+    					stQry="exec usp_pr_InsertstkRequestext_Profit 3,'"+vcldocno+"','"+vcldocdate+"','"+vclitemcode+"',"+vclqty+",'"+vclunitcode+"','"+vclapcode+"','"+vuser+"',"+vcllineno+",'-'";
+    					// System.out.println("ยกเลิก ="+stQry);
+    					stc.execute(stQry);    		   		
+    		   	}
+			}
+		}
+		alert("ยกเลิกรายการที่เลือกเรียบร้อยแล้ว");
+		// Messagebox.show("ยกเลิกรายการที่เลือกเรียบร้อยแล้ว", "information window", Messagebox.OK,Messagebox.INFORMATION);
+	}catch(SQLException e){
+		
+		lspr.getItems().clear();
+		loadaproveitems();
+	}
+	
+}
+
+public void Consolidateall(){
+	//String postuser="panuvich";
+	Integer i =0;
+	String rsl;
+	String getdocdate;
+	String vyear;
+	String vyear2;
+	String postdocdate;
+	//-----------
+	String pvdocnonew;
+	String pvdocdate;
+	String pvitemcodepost;
+	Double pvpostqty;
+	String pvunitcode;
+	String pvapcodenew;
+	String pvlinenumber;
+	String vqry1;
+	String vqry2;
+	//-----------
+	try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		if(lspr.getItemCount()>0){
+			for(int y=0;y<lspr.getItemCount();y++){
+				Listitem li =new Listitem();			
+    		   	li=lspr.getItemAtIndex(y);
+	    		   	if(li.isSelected()==true){
+		    		   	Listcell lc01 = (Listcell) li.getChildren().get(1); //itemcode
+		    		   	Listcell lc05 = (Listcell) li.getChildren().get(5); //qty
+		    		   	Listcell lc06 = (Listcell) li.getChildren().get(6); //unitcode
+		    		   	Listcell lc09 = (Listcell) li.getChildren().get(18); //apcode
+		    		   	Listcell lc11 = (Listcell) li.getChildren().get(10); //docno
+		    		   	Listcell lc12 = (Listcell) li.getChildren().get(11); //docdate
+		    		   	Listcell lc14 = (Listcell) li.getChildren().get(13); //linenumber
+						
+						////set date time
+						getdocdate =  lc12.getLabel();
+						vyear = getdocdate.substring(6);
+						String vdate=getdocdate.substring(0,6);
+				   		Integer xInt1 = Integer.parseInt(vyear);
+					   		if (xInt1 > 2500){
+					   			Integer bInt= xInt1-543;
+					   			vyear2= Integer.toString(bInt);
+					   		}else {
+					   			vyear2= Integer.toString(xInt1);
+					   		}
+				   			postdocdate=vdate.concat(vyear2);
+		    		   	///--------------
+		    		   	pvitemcodepost = lc01.getLabel();
+		    		   	pvpostqty = ((Doublebox)lc05.getChildren().get(0)).getValue();
+		    		   	numformat.format(pvpostqty);
+		    		   	pvunitcode = lc06.getLabel();
+		    		   	pvapcodenew = lc09.getLabel();
+		    		   	pvdocnonew = lc11.getLabel();
+		    		   	pvdocdate = postdocdate;
+		    		   	pvlinenumber = lc14.getLabel();
+		    		   	
+		    		   	Double vdbqty = pvpostqty;		    		   
+		    			Statement stp = conn.createStatement();
+						vqry1="exec usp_pr_InsertstkRequestext_Profit 1,'"+pvdocnonew+"','"+pvdocdate+"','"+pvitemcodepost+"',"+vdbqty+",'"+pvunitcode+"','"+pvapcodenew+"','"+vuser+"',"+pvlinenumber+",'-'";
+						System.out.println("Q="+vqry1);
+		    			stp.execute(vqry1);
+		    			
+		    			vqry2="exec usp_pr_InsertstkRequestext_Profit 2,'"+pvdocnonew+"','"+pvdocdate+"','"+pvitemcodepost+"',"+vdbqty+",'"+pvunitcode+"','"+pvapcodenew+"','"+vuser+"',"+pvlinenumber+",'-'";
+		    			System.out.println(vqry2);
+		    			stp.execute(vqry2);
+		    			 			
+	    		   	}		    		   	
+				}
+			Statement stsd = conn.createStatement();		
+			stsd.execute("exec usp_pr_consolidateprvendor_Profit '"+vuser+"'"+
+							  " exec USP_NP_UpdateStkRequestStatus"+
+							  " exec USP_NP_Roderlog  0,0,1,0,0");
+							  
+			//ResultSet vrs = stsd.getResultSet();
+			}
+				
+	}catch(SQLException e){}
+	alert("อนุมัติรายการที่เลือกเรียบร้อยแล้ว");
+	// Messagebox.show("อนุมัติรายการที่เลือกเรียบร้อยแล้ว", "information window", Messagebox.OK,Messagebox.INFORMATION);
+	lspr.getItems().clear();
+	loadaproveitems();	
+}
+
+public void loadconsolidate(){
+	Integer x=0;
+	Integer n=0;
+	Integer vai=0;
+	String stradjqty;
+	String strqty;
+	String strsdadjust;
+
+	try {
+		if(cmbsaleteam.getSelectedIndex()>=0){
+			pvsaleteamcode =cmbsaleteam.getSelectedItem().getValue().toString();			
+			}else{pvsaleteamcode="";}
+		if(cmbdepartment.getText()!=""){
+			pvdepartmentcode = cmbdepartment.getSelectedItem().getValue().toString();
+				n=cmbdepartment.getSelectedIndex();				
+				System.out.println("pvdept ="+pvdepartmentcode+"n ="+n);			
+			}else{pvdepartmentcode="";}		
+			
+			
+		    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Statement sitm = conn.createStatement();
+			sitm.executeQuery("exec usp_pr_StockRequestDaily_Profit '"+vprofit+"',2,'"+pvsaleteamcode+"',"+
+					" '"+pvapcode+"','"+pvdepartmentcode+"','"+pvdocno+"' ");
+			ResultSet rsitm = sitm.getResultSet();
+			while(lspr.getItemCount()>0){
+				lspr.removeItemAt(0);	
+			}
+			while(rsitm.next()){
+				x+=1;
+				Listitem litm = new Listitem();
+				litm.appendChild(new Listcell(Integer.toString(x)));
+				litm.appendChild(new Listcell(rsitm.getString("itemcode")));
+				litm.appendChild(new Listcell(rsitm.getString("itemname")));
+				strqty=rsitm.getString("qty");
+				Listcell lcqty = new Listcell(cmformat.format(Double.parseDouble(strqty)));
+				litm.appendChild(lcqty);
+				
+				strsdadjust= rsitm.getString("adjustqty1");
+				Listcell lcsdadj = new Listcell(cmformat.format(Double.parseDouble(strsdadjust)));
+				lcsdadj.setStyle("color: #C10040; font-weight: bold;");
+				litm.appendChild(lcsdadj);
+				
+				stradjqty = rsitm.getString("adjustqty2");
+				vai= rsitm.getInt("isadjust2");
+				if(vai==1){
+					stradjqty=stradjqty;
+					Listcell lcadj = new Listcell(cmformat.format(Double.parseDouble(stradjqty)));
+					lcadj.setStyle("color: red; font-weight: bold;");
+					litm.appendChild(lcadj);
+				}else{
+					stradjqty=strsdadjust;
+					Listcell lcadj = new Listcell(cmformat.format(Double.parseDouble(stradjqty)));
+					lcadj.setStyle("color: blue; font-weight: bold;");
+					litm.appendChild(lcadj);
+				}					
+				//lcx.appendChild();								
+				litm.appendChild(new Listcell(rsitm.getString("unitcode")));
+				litm.appendChild(new Listcell(cmformat.format(Double.parseDouble(rsitm.getString("stockqty")))));
+				litm.appendChild(new Listcell(rsitm.getString("departname")));
+				litm.appendChild(new Listcell(rsitm.getString("apcode"))); // 9
+				litm.appendChild(new Listcell(rsitm.getString("apname")));
+				litm.appendChild(new Listcell(rsitm.getString("docno")));
+				litm.appendChild(new Listcell(dtmformat.format(rsitm.getDate("docdate"))));
+				litm.appendChild(new Listcell(rsitm.getString("workmanname")));
+				litm.appendChild(new Listcell(rsitm.getString("linenumber")));
+				lsprcon.appendChild(litm);
+				
+			}
+		} catch (SQLException e){}
+	}
+public void authenview(){
+	String vchkuser;
+	Integer intcook;
+	Cookie [] cki = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	for (Cookie ckulv : cki) {
+		if (ckulv.getName().equals("ulevel")) {
+			vchkuser =ckulv.getValue();
+			
+		}
+	}	
+	intcook = Integer.parseInt(vchkuser);	
+	//System.out.println("cookie 1 = "+intcook);
+	if(intcook >= 3){
+		lspr.setVisible(true);
+		lsitems.setVisible(false);
+		loadaproveitems();
+		gbp02.setVisible(false);		
+		gbapp.setVisible(true);		
+		
+	}else
+	 {  
+		imgp.setSrc("/images/p01.png");
+		 lspr.setVisible(false);
+		 lsitems.setVisible(true); 
+		 loaditemlist();
+	 
+	 }
+}
+
+public void viewpage(){
+	String vchkuser;
+	Integer intcook;
+	Cookie [] ckv = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	for (Cookie cklv : ckv) {
+		if (cklv.getName().equals("ulevel")) {
+			vchkuser =cklv.getValue();
+		}
+	}	
+	intcook = Integer.parseInt(vchkuser);
+	//System.out.println("cookie 1 = "+intcook);
+	if(intcook >= 3){
+		imgp.setSrc("/images/p02.png");
+	
+	}else
+	 {  
+		gbxfind.setVisible(false);
+		imgp.setSrc("/images/p01.png");
+		
+		lblan.setValue("ตั้งแต่วันที่ 6 มีนาคม 2555 เป็นต้นไป ยกเลิกกระบวนการนี้ชั่วคราว เพื่อลดขั้นตอนการทำงาน ให้ Division Adjust ยอด"+
+				"ในรายงานพร้อมกันกับ SGM แล้วให้ Adjust อนุมัติจำนวนขอซื้อในระบบพร้อมกับเสนอทำ PO ในครั้งเดียวครับ.");
+		lblan.setStyle("font-size:12px; font-weight:bold; color:red;");
+		lblan.setVisible(true);	 
+	 }
+}
+
+
+public void viewcheckbox(){
+	if(cbxed.isChecked()== true){
+	lspr.setVisible(false);	
+	lsprcon.setVisible(true);
+	loadconsolidate();
+	btnconsolidate.setVisible(true);
+	}else
+	{
+		lspr.setVisible(true);
+		loadaproveitems();
+		lsprcon.setVisible(false);
+		lsprcon.getItems().clear();
+		btnconsolidate.setVisible(false);
+	}
+}
+	public void vselecteditem(){
+		Listitem sstd = new Listitem();
+		sstd = lsitems.getSelectedItem();
+		ssitem(); 
+		loaddetail(); 
+		shelfinfo();
+	}
+	public void SGMApproveQTYinline(){
+		String postdocdate;
+   		String pvitemcodepost;
+   		Double pvpostqty;
+   		String pvunitcode;
+   		String pvapcodenew;
+   		String pvdocnonew;
+   		String pvdocdate;
+   		
+		try {
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+			Listitem li = new Listitem();
+			li = lspr.getSelectedItem();
+			Listcell lc01 = (Listcell) li.getChildren().get(1); //itemcode
+		   	Listcell lc05 = (Listcell) li.getChildren().get(5); //qty
+		   	Listcell lc06 = (Listcell) li.getChildren().get(6); //unitcode
+		   	Listcell lc09 = (Listcell) li.getChildren().get(18); //apcode
+		   	Listcell lc11 = (Listcell) li.getChildren().get(10); //docno
+		   	Listcell lc12 = (Listcell) li.getChildren().get(11); //docdate
+		   	Listcell lc14 = (Listcell) li.getChildren().get(13); //linenumbe			
+			
+		   	getdocdate =  lc12.getLabel();
+			vyear = getdocdate.substring(6);
+			String vdate=getdocdate.substring(0,6);
+	   		Integer xInt1 = Integer.parseInt(vyear);
+		   		if (xInt1 > 2500){
+		   			Integer bInt= xInt1-543;
+		   			vyear2= Integer.toString(bInt);
+		   		}else {
+		   			vyear2= Integer.toString(xInt1);
+		   		}
+	   		
+	   		
+		   		postdocdate=vdate.concat(vyear2);
+		   	///--------------
+		   	pvitemcodepost = lc01.getLabel();
+		   	pvpostqty = ((Doublebox)lc05.getChildren().get(0)).getValue();
+		   	pvunitcode = lc06.getLabel();
+		   	pvapcodenew = lc09.getLabel();
+		   	pvdocnonew = lc11.getLabel();
+		   	pvdocdate = postdocdate;
+		   	pvlinenumber = lc14.getLabel();
+		   	
+		   	Double vdbqty = pvpostqty;
+		   
+			Statement stp = conn.createStatement();
+			stp.execute("exec usp_pr_InsertstkRequestext_Profit 1,'"+pvdocnonew+"','"+pvdocdate+"','"+pvitemcodepost+"',"+vdbqty+",'"+pvunitcode+"','"+pvapcodenew+"','"+vuser+"',"+pvlinenumber+",'-'");
+			Statement stps = conn.createStatement();
+			stps.execute("exec usp_pr_InsertstkRequestext_Profit 2,'"+pvdocnonew+"','"+pvdocdate+"','"+pvitemcodepost+"',"+vdbqty+",'"+pvunitcode+"','"+pvapcodenew+"','"+vuser+"',"+pvlinenumber+",'-'");
+			Statement stsd = conn.createStatement();		
+			stsd.execute("exec usp_pr_consolidateprvendor_Profit '"+vuser+"'"+
+							  " exec USP_NP_UpdateStkRequestStatus"+
+							  " exec USP_NP_Roderlog  0,0,1,0,0");
+		}
+		
+		catch(SQLException e){}
+		alert("อนุมัติรายการที่เลือกเรียบร้อยแล้ว");
+		// Messagebox.show("อนุมัติรายการนี้เรียบร้อยแล้ว", "information window", Messagebox.OK,Messagebox.INFORMATION);
+		lspr.getItems().clear();
+		loadaproveitems();
+	}
+
+	public void showSeachCount(){
+		Integer vCountItem=0;
+		try{			
+			vCountItem=lspr.getItemCount();
+			intbItem.setValue(vCountItem);
+		}catch(Exception e){}
+	}
+	]]>
+</zscript>
+<style>
+	.tx{
+		font-size:12px;
+		font-weight:bold;
+		color:#FFFFFF;
+	}
+</style>
+<groupbox  id="gbxfind" style="background-color:#00769A" >
+<hbox>
+	<x:table>
+		<x:tr>
+			<x:td class="tx">
+				รายการสินค้ารออนุมัติ :
+			</x:td>	
+			<x:td width="25px" />	
+		</x:tr>
+		<x:tr>
+			<x:td align="center">
+				<intbox id="intbItem" format="#,##0" style="text-align:right; font-size:14px; font-weight:bold; color:blue;" readonly="true" value="0"/>
+			</x:td>
+			<x:td width="25px" />			
+		</x:tr>
+	</x:table>
+
+	<x:table>
+	<x:tr>
+	<x:td class="tx">Expert Team :</x:td>
+	<x:td><combobox id="cmbsaleteam" width="150px" onSelect="loaddepartment(); loadsection();"/></x:td>
+	<x:th rowspan="2" valign="center">
+		<hbox>
+		<button label="ตกลง" width="100px" height="50px" onClick="authenview()" image="/images/approve.png"/>
+		<button label="Clear" width="100px" height="50px" onClick="clrfilterbox()" image="/images/refreshb.png" />
+		<button label="ปิดหน้านี้" width="100px" height="50px" onClick="exitpage()" image="/images/close.png" />
+		</hbox>
+	</x:th>
+	</x:tr>
+	<x:tr>
+	<x:td class="tx">Department :</x:td>
+	<x:td><combobox id="cmbdepartment" width="150px"/></x:td>
+	</x:tr>
+	</x:table>
+</hbox>
+</groupbox>
+
+<groupbox id ="gbapp" visible="false">
+<div align="left">
+<checkbox label="คลิกช่องนี้เพื่อทำรายการอนุมัติหลายรายการ " id="cbxed" onCheck="viewcheckbox()" visible="false"/>
+<button id="btnconsolidate" label="อนุมัติเสนอซื้อสินค้า [Consolidate]" image="/images/bok.png" style="font-weight:bold; color:#006B8C;" visible="false">
+ <attribute name="onClick" >
+    //in disable case .
+    Messagebox.show("คุณตรวจสอบแล้วและจะทำ Consolidate รายการทั้งหมด?",
+    "ยืนยันรายการ", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                    Consolidateall();
+                }else if("onCancel".equals(e.getName())){                    
+                }   
+            }
+        }
+    );
+</attribute>
+</button>
+<button label="ยกเลิกสินค้าที่เลือก" image="/images/bcancel.png" visible="false">
+ <attribute name="onClick" >
+    //in disable case .
+    Messagebox.show("คุณตรวจสอบแล้วและจะยกเลิกรายการที่เลือกทั้งหมด?",
+    "ยืนยันรายการ", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                    CancelMutiItem();
+                }else if("onCancel".equals(e.getName())){                    
+                }   
+            }
+        }
+    );
+</attribute>
+</button>
+<button id="btnProcess" label="ประมวลผลรายการทั้งหมด" image="/images/bok.png" style="font-weight:bold; color:#006B8C;" visible="true">
+ <attribute name="onClick" >
+    //in disable case .
+    Messagebox.show("คุณตรวจสอบแล้วและจะประมวลผลรายการทั้งหมด?",
+    "ยืนยันรายการ", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                    sCheckValue();
+                }else if("onCancel".equals(e.getName())){                    
+                }   
+            }
+        }
+    );
+</attribute>
+</button>
+</div>
+</groupbox>
+<listbox id="lsitems" mold="paging" pageSize="15" height="380px" visible="false" >
+	<listhead >
+		<listheader label="ลำดับ" width="35px" align="center"/>
+		<listheader label="รหัสสินค้า" width="100px" align="left"/>
+		<listheader label="ชื่อสินค้า" width="300px" align="left"/>
+		<listheader label="จำนวนเสนอซื้อ" width="80px" align="right"/>
+		<listheader label="Adjust" width="80px" align="right"/>
+		<listheader label="หน่วยนับ" width="80px" align="center"/>
+		<listheader label="ยอดคงเหลือทั้งหมด" align="right" visible="false"/>		
+		<listheader label="Department" width="120px" align="left" sort="auto"/>
+		<listheader label="เจ้าหนี้" align="left" visible="false"/>
+		<listheader label="เลขที่เอกสาร" width="150px" sort="auto" align="left"/>
+		<listheader label="วันที่เอกสาร" sort="auto" visible="false" />
+		<listheader label="ผู้เสนอซื้อ" align="left" sort="auto" visible="false"/>
+		<listheader visible="false"/>		
+		<listheader label="Click" visible="false"/>
+		<listheader visible="false"/>
+	</listhead>	
+</listbox>
+
+<!-- **************************************************** sgm view 00769A ******************************************* -->
+
+<listbox id="lspr" mold="paging" pageSize="10" height="380px" multiple="true" checkmark="true" visible="flase">
+	<listhead >
+		<listheader label="All" width="50px" align="center" visible="false"/>
+		<listheader label="No." width="35px" align="center"/>
+		<listheader width="50px" align="center"><checkbox id="sapcx" label="AP" style="font-weight:bold; color:#F90F35;" onCheck="sAPAll()"/></listheader>
+		<listheader width="50px" align="center"><checkbox id="sclcx" label="CC" style="font-weight:bold; color:#F90F35;" onCheck="sCLAll()"/></listheader>		
+		<listheader label="รหัสสินค้า" width="130px" align="left"/>
+		<listheader label="ชื่อสินค้า" width="350px" align="left"/>
+		<listheader label="จำนวนเสนอซื้อ" width="120px" align="right"/>
+		<listheader label="SDAdjust" visible="false"/>
+		<listheader label="SGMAdjust" width="100px" align="right"/>
+		<listheader label="หน่วยนับ" width="80px" align="center"/>
+		<listheader label="ยอดคงเหลือทั้งหมด" visible="false"/>		
+		<listheader label="Department" width="150px" align="left" sort="auto"/>
+		<listheader label="เจ้าหนี้" visible="false"/>
+		<listheader label="เลขที่เอกสาร" visible="false"/>
+		<listheader label="วันที่เอกสาร" visible="false"/>
+		<listheader label="ผู้เสนอซื้อ"  visible="false"/>
+		<listheader label="linenumber" visible="false" />	
+		<listheader label="Click" visible="false"/>
+		<listheader label="apcode" visible="false" />
+		<listheader label="Detail" width="120px"/>
+	</listhead>	
+</listbox>
+
+<!--  Lis approve and consolidate -->
+<listbox id="lsprcon" mold="paging" pageSize="20" multiple="true" checkmark="true" height="380px" visible="false">
+	<listhead style="background:#00769A; font-weigth:bold; color:#FFFFFF;">
+		<listheader label="ลำดับ" width="70px" align="center"/>
+		<listheader label="รหัสสินค้า" width="100px" align="left"/>
+		<listheader label="ชื่อสินค้า" width="300px" align="left"/>
+		<listheader label="จำนวนเสนอซื้อ" width="80px" align="right"/>
+		<listheader label="SDMAdjust" width="80px" align="right"/>
+		<listheader label="SGMAdjust" width="80px" align="right"/>
+		<listheader label="หน่วยนับ" width="80px" align="center"/>
+		<listheader label="ยอดคงเหลือทั้งหมด" align="right" visible="false"/>		
+		<listheader label="Department" visible="false"/>
+		<listheader label="apcode"  visible="false"/>
+		<listheader label="เจ้าหนี้" width="150px" align="left"/>
+		<listheader label="เลขที่เอกสาร" width="150px" sort="auto" align="left"/>
+		<listheader label="วันที่เอกสาร" sort="auto" visible="false"/>
+		<listheader label="ผู้เสนอซื้อ"  align="left" sort="auto" visible="false"/>
+		<listheader visible="false" />	
+	</listhead>	
+</listbox>
+<!--  end approve and consolidate -->
+</groupbox>
+<!-- end sgm view -->
+<groupbox id="gbp02" width="" visible="false">
+
+<popup id="graddescription" width="500px">
+  <html><![CDATA[
+			<font color="red">เปอร์เซนต์การจัดเกรดสินค้า</font><br>
+			เกรด A : ตัวจัดเกรดสินค้า >= 80%<br>
+			เกรด B : ตัวจัดเกรดสินค้า >= 70% และ ตัวจัดเกรดสินค้า < 80%<br>
+			เกรด C : ตัวจัดเกรดสินค้า >= 60% และ ตัวจัดเกรดสินค้า < 70%<br>
+			เกรด D : ตัวจัดเกรดสินค้า > 0% และ ตัวจัดเกรดสินค้า < 60%<br>
+			เกรด  None หรือ E : คือ ไม่ได้ขายสินค้า
+        ]]></html>
+</popup>
+<popup id="redotdescription" width="500px">
+  <html><![CDATA[
+			<font color="red">เงื่อนไข Reddot</font><br>
+			1.ยอดขายแยกสาขา<br>
+			2.ยอดขายตาม Department ไม่รวมแม่สีเรียงจากความถี่ขาย,จำนวน,มูลค่า<br>
+			3.ยกเว้น Promotion ที่แจ้งมา เช่น Mid Year Sale 2010<br>
+			4.คำนวณ Monthly
+        ]]></html>
+</popup>
+<div align="center">
+<groupbox width="800px">
+<div align="left">
+<image src="/images/p03.png" />
+</div>
+<div align="none">
+<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right"/>
+			<column label="" width="680px" align="left" />
+		</columns>
+		<rows>
+			<row><label value="รหัสสินค้า :" /><label id="lblitemcode" style="font-weight:bold; color:#EC4E00;"/>	
+			</row>
+			<row><label value="ชื่อสินค้า : " /><label id="lblitemname" style="font-weight:bold; color:#EC4E00;"/>
+			</row>
+		</rows>
+	</grid>
+<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right" />
+			<column label="" width="280px" align="left" />
+			<column label="" width="120px" align="right"/>
+			<column label="" width="280px" align="left" />
+		</columns>
+		<rows>
+			<row><label value="จำนวนขอซื้อ :" /><label id="lblqty" style="font-weight:bold; color:#EC4E00;"/><label value="หน่วยนับซื้อ : " /><label id="lbldefbuyunitcode" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="หน่วยนับสต็อก :" /><label id="lbldefstkunitcode" style="font-weight:bold; color:blue;"/><label value="หน่วยนับหลัก : " /><label id="lblunitcode" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="จำนวนวันที่ต้องการ :" /><hbox><label id="lblwantday" style="font-weight:bold; color:#EC4E00;"/><label value="วัน" style="font-weight:normal; color:blue"/></hbox><label value="วันที่ต้องการ : " /><label id="lblwantdate" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="ราคาซื้อล่าสุด :" /><label id="lbllastbuyprice" style="font-weight:bold; color:blue;" visible="false"/><label value="สถานะสินค้า : " /><label id="lblitemstatus" style="font-weight:bold; color:blue;"/>
+			</row>			
+			<row><label value="เกรด :" /><label id="lblgrade" style="font-weight:bold; color:blue;" tooltip="graddescription"/><label value="สินค้าขายดี : " /><label id="lblreddot" style="font-weight:bold; color:blue;" tooltip="redotdescription"/>
+			</row>
+			<row><label value="จุดที่ควรสั่งซื้อ :" /><label id="lblorderpoint" style="font-weight:bold; color:blue;"/><label value="ราคาขาย : " /><label id="lblsaleprice" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="จุดสูงสุด :" /><label id="lblstockmax" style="font-weight:bold; color:blue;"/><label value="จุดต่ำสุด: " /><label id="lblstockmin" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="Department: " /><label id="lbldepart" style="font-weight:bold; color:blue;"/><label value="เจ้าหนี้ : " /><label id="lblapname" style="font-weight:bold; color:blue;"/>
+			</row>			
+			<row><label value="ทีมขาย :" /><label id="lblsaleteam" style="font-weight:bold; color:blue;"/><label value="อัตราส่วน : " /><label id="lblrate" style="font-weight:bold; color:blue;"/>
+			</row>
+						
+		</rows>
+	</grid>
+	</div>
+	<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right" />
+			<column label="" width="280px" align="left" />
+			<column label="" width="120px" align="right"/>
+			<column label="" width="280px" align="left" />
+		</columns>
+		<rows>
+			<row style="background-color:#88B8FF"><label value="เลขที่เอกสาร : "/><label id="lbldocno" style="font-weight:bold; color:blue;"/><label value="วันที่เอกสาร : "/><label id="lbldocdate" style="font-weight:bold; color:blue;"/>	
+			</row>
+			<row style="background-color:#88B8FF"><label value="ผู้สร้างเอกสาร : "/><label id="lblcreator" style="font-weight:bold; color:blue;"/><label value="วันที่สร้าง : "/><label id="lblcreatedate" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row style="background-color:#88B8FF"><label value="ผู้เสนอซื้อ : " /><label id="lblworkman" style="font-weight:bold; color:blue;"/><label value="คำอธิบาย : " /><label id="lblmydesc" style="font-weight:bold; color:blue;"/>			
+			</row>
+		</rows>
+	</grid>
+<listbox id="headpr" visible="false">
+	<listhead>
+		<listheader label="เลขที่เอกสาร" />
+		<listheader label="วันที่เอกสาร" />
+		<listheader label="ผู้สร้างเอกสาร" />
+		<listheader label="วันที่สร้าง" />
+		<listheader label="ผู้เสนอซื้อ" />
+		<listheader label="คำอธิบาย" />
+	</listhead>	
+</listbox>
+</groupbox>
+</div>
+<groupbox width="800px">
+<listbox width="800px">
+	<listhead>
+		<listheader label="คลัง" width="100px"/>
+		<listheader label="ยอดคงเหลือ" align="right"/>
+		<listheader label="ยอดค้างรับ"  align="right"/>
+		<listheader label="ยอดค้างส่ง"  align="right"/>
+		<listheader label="ยอดจอง"  align="right"/>
+		<listheader label="ยอดขายเฉลี่ย/สัปดาห์จาก 12สัปดาห์"  align="right"/>		
+	</listhead>	
+	<listitem>
+		<listcell label="S01" style="font-size:12; font-weight:bold; color:#0429E0;"/>
+		<listcell><label id="lblrmqtys01" /></listcell>
+		<listcell><label id="lblrminqtys01" /></listcell>
+		<listcell><label id="lblrmoutqtys01" /></listcell>
+		<listcell><label id="lblrvqtys01" /></listcell>
+		<listcell><label id="lblsl3ms01" /></listcell>
+	</listitem>
+	<listitem>
+		<listcell label="S02" style="font-size:12; font-weight:bold; color:#E24A00;"/>
+		<listcell><label id="lblrmqtys02" /></listcell>
+		<listcell><label id="lblrminqtys02" /></listcell>
+		<listcell><label id="lblrmoutqtys02" /></listcell>
+		<listcell><label id="lblrvqtys02" /></listcell>
+		<listcell><label id="lblsl3ms02" /></listcell>
+	</listitem>
+	<listfoot>
+	<listfooter><label value="รวมทั้งหมด" style="font-weight:bold;" /></listfooter>
+	<listfooter><label id="lblrmqty" style="font-weight:bold;" /></listfooter>
+	<listfooter><label id="lblrminqty" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblrmoutqty" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblrvqty" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblsumsale" style="font-weight:bold;"/></listfooter>	
+	</listfoot>
+</listbox>
+<panel title="ยอดคงเหลือตามชั้นเก็บ" border="normal" collapsible="true" open="false" width="800px">
+<panelchildren>
+<listbox id="lbxshelfinfo" >
+	<listhead>
+		<listheader label="คลัง" width="100px"/>
+		<listheader label="ชื่อชั้นเก็บ" align="left"/>
+		<listheader label="จำนวน"  align="right"/>
+		<listheader label="หน่วยนับ"  align="left"/>
+	</listhead>	
+</listbox>
+</panelchildren>
+</panel>
+
+
+<label id="lblapcode" visible="false" />
+</groupbox>
+
+<groupbox width="800px">
+<div align="left" >
+<hbox><label value="จำนวนขอซื้อ : " style="font-size:25; font-weight:bold;" width="180px"/><doublebox id="dblqty" format="#,##0.00" style="font-size:28px; font-weight:bold; color:red; text-align:right;" width="180px" height="32px" />
+<label id="lbltest" visible="false"/>
+<button label="ตกลง" width="100px" height="50px" image="/images/bok.png">
+<attribute name="onClick">
+   /* in disable case .
+     if(dblqty.getValue() == 0){
+                	Messagebox.show("ไม่สามารถ Addjust ค่า 0.00 ได้ หากไม่อนุมัติการขอซื้อกรุณายกเลิกรายการสินค้านี้",
+                	"Warning", Messagebox.OK,
+                	Messagebox.INFORMATION );	
+                }else
+              {
+              */
+    Messagebox.show("คุณได้ตรวจสอบรายการนี้แล้วและจะขออนุมัติ?",
+    "Question", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                   adjustQTY();
+                }else if("onCancel".equals(e.getName())){
+                    alert("กรณีที่ไม่ได้ปรับเพิ่มลดจำนวนให้ Adjust ตามจำนวนที่ขอมา.");
+                }
+                 
+                /* Event Name Mapping list
+                Messagebox.YES = "onYes";
+                Messagebox.NO  = "onNo";
+                Messagebox.RETRY = "onRetry";
+                Messagebox.ABORT = "onAbort";
+                Messagebox.IGNORE = "onIgnore";
+                Messagebox.CANCEL = "onCancel";
+                Messagebox.OK = "onOK";
+                */
+            }
+        }
+    );
+    //}
+</attribute>
+</button>
+
+
+<button label="ยกเลิกสินค้านี้" width="100px" height="50px" image="/images/bcancel.png">
+<attribute name="onClick">
+    //in disable case .
+    Messagebox.show("คุณแน่ใจว่าจะยกเลิกรายการนี้ ?",
+    "Question", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                   rejectdvs();
+                }
+                 
+                /* Event Name Mapping list
+                Messagebox.YES = "onYes";
+                Messagebox.NO  = "onNo";
+                Messagebox.RETRY = "onRetry";
+                Messagebox.ABORT = "onAbort";
+                Messagebox.IGNORE = "onIgnore";
+                Messagebox.CANCEL = "onCancel";
+                Messagebox.OK = "onOK";
+                */
+            }
+        }
+    );
+</attribute>
+</button>
+<button label="กลับหน้ารายการ" width="100px" height="50px" onClick="vsgb1();" image="/images/bback.png" />
+</hbox>
+</div>
+</groupbox>
+
+<zscript>
+<![CDATA[
+import org.zkoss.zul.Doublebox;
+         
+String pvitemcode;
+String pvitemname;
+String pvadjqty;
+String pvprno;
+String pvlinenumber;
+Double nqty;
+Double naddqty;
+Double iaddqty;
+Integer iadj;
+//----------
+
+	String adjqty;
+	String adjdocno;
+	String adjdocdate;
+	String adjitemcode;
+	String adjunitcode;
+	String vyear;
+	String vyear1;
+	String getdocdate;
+	Double vgetdbx;
+	String pvapcodeadd;
+
+
+public void ssitem(){
+	Listitem ll = new Listitem();
+	ll = lsitems.getSelectedItem();
+	Listcell ll1 =(Listcell) ll.getChildren().get(1);
+	Listcell ll2 = (Listcell) ll.getChildren().get(2);
+	Listcell ll4 = (Listcell) ll.getChildren().get(4); //adjust qty
+	Listcell ll9 =(Listcell) ll.getChildren().get(9); //docno
+	Listcell ll12 = (Listcell) ll.getChildren().get(12); //linenumber
+	pvitemcode = ll1.getLabel();
+	pvitemname =ll2.getLabel();
+	pvadjqty = ll4.getLabel();
+	pvprno = ll9.getLabel();
+	pvlinenumber = ll12.getLabel();
+	gbp01.setVisible(false);
+	gbp02.setVisible(true);
+}
+
+public void loaddetail(){
+	Double v1=0.00, v2=0.00, vtotal=0.00;
+	try{
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement stm = conn.createStatement();
+		stm.executeQuery("exec usp_pr_searchreordernotapproveitemdetails_Profit 0,'"+pvprno+"','"+pvitemcode+"','"+vprofit+"'");	
+		ResultSet rstm = stm.getResultSet();
+		while(rstm.next()){
+			
+			v1=rstm.getDouble("sumsaleqty3monthagos01");
+			v2=rstm.getDouble("sumsaleqty3monthagos02");
+			vtotal=v1+v2;
+			
+			lbldocno.setValue(rstm.getString("docno"));
+			lbldocdate.setValue(dtmformat.format(rstm.getDate("docdate")));
+			lblcreator.setValue(rstm.getString("creatorcode"));
+			lblcreatedate.setValue(dtmformat.format(rstm.getDate("createdatetime")));
+			lblworkman.setValue(rstm.getString("workmanname"));
+			lblmydesc.setValue(rstm.getString("mydescription"));
+			lblitemcode.setValue(rstm.getString("itemcode"));
+			lblitemname.setValue(rstm.getString("itemname"));
+			lblqty.setValue(numformat.format(rstm.getDouble("qty")));
+			lbldefbuyunitcode.setValue(rstm.getString("defbuyunitcode"));
+			lbldefstkunitcode.setValue(rstm.getString("defstkunitcode"));
+			lblunitcode.setValue(rstm.getString("unitcode"));
+			lblwantday.setValue(rstm.getString("wantday"));
+			lblwantdate.setValue(dtmformat.format(rstm.getDate("wantdate")));
+			lbldepart.setValue(rstm.getString("departname"));
+			lblapcode.setValue(rstm.getString("apcode"));
+			lblapname.setValue(rstm.getString("apname"));
+			lblsaleteam.setValue(rstm.getString("expertname"));
+			lblrate.setValue(numformat.format(rstm.getDouble("rate1")));
+			
+			lblrmqtys01.setValue(numformat.format(rstm.getDouble("remainqtys01")));
+			lblrminqtys01.setValue(numformat.format(rstm.getDouble("remaininqtys01")));
+			lblrmoutqtys01.setValue(numformat.format(rstm.getDouble("remainoutqtys01")));
+			lblrvqtys01.setValue(numformat.format(rstm.getDouble("reserveqtys01")));
+			lblsl3ms01.setValue(numformat.format(rstm.getDouble("sumsaleqty3monthagos01")));
+			lblrmqtys02.setValue(numformat.format(rstm.getDouble("remainqtys02")));
+			lblrminqtys02.setValue(numformat.format(rstm.getDouble("remaininqtys02")));
+			lblrmoutqtys02.setValue(numformat.format(rstm.getDouble("remainoutqtys02")));
+			lblrvqtys02.setValue(numformat.format(rstm.getDouble("reserveqtys02")));
+			lblsl3ms02.setValue(numformat.format(rstm.getDouble("sumsaleqty3monthagos02")));
+			lblrmqty.setValue(numformat.format(rstm.getDouble("stockqty")));
+			lblrminqty.setValue(numformat.format(rstm.getDouble("remaininqty")));
+			lblrmoutqty.setValue(numformat.format(rstm.getDouble("remainoutqty")));
+			lblrvqty.setValue(numformat.format(rstm.getDouble("reserveqty")));
+			lblsumsale.setValue(numformat.format(vtotal));
+			lbltest.setValue(pvlinenumber);
+			// update 26/8/2011
+			lbllastbuyprice.setValue(numformat.format(rstm.getDouble("lastbuyprice")));
+			lblitemstatus.setValue(rstm.getString("itemstatus"));
+			lblgrade.setValue(rstm.getString("grade"));
+			lblreddot.setValue(rstm.getString("reddot"));
+			lblorderpoint.setValue(numformat.format(rstm.getDouble("orderpoint")));
+			lblsaleprice.setValue(numformat.format(rstm.getDouble("saleprice1")));
+			lblstockmax.setValue(numformat.format(rstm.getDouble("stockmax")));
+			lblstockmin.setValue(numformat.format(rstm.getDouble("stockmin")));
+			
+			nqty=rstm.getDouble("qty");
+			naddqty=rstm.getDouble("adjustqty1");
+			iadj = rstm.getInt("isadjust1");
+			
+			if(nqty==naddqty || iadj==1){
+				iaddqty=nqty;
+			}else{
+				iaddqty=nqty;
+			}
+			
+			dblqty.setValue(iaddqty);
+			vsgb2();
+		}			
+		
+	}catch(SQLException e){}
+}
+public void shelfinfo(){
+	try{
+		publicconnection();
+		Statement sf = vConnectdb.createStatement();
+		sf.executeQuery("exec usp_pr_itemstockonhand '"+pvitemcode+"'");	
+		ResultSet rss = sf.getResultSet();
+		while(lbxshelfinfo.getItemCount()>0){
+			lbxshelfinfo.removeItemAt(0);
+		}
+		while(rss.next()){
+			Listitem vli = new Listitem();
+			vli.appendChild(new Listcell(rss.getString("whcode")));
+			vli.appendChild(new Listcell(rss.getString("shelfcode")));
+			vli.appendChild(new Listcell(numformat.format(rss.getDouble("qty"))));
+			vli.appendChild(new Listcell(rss.getString("unitcode")));
+			lbxshelfinfo.appendChild(vli);			
+		}
+		
+	}catch(SQLException e){}
+}
+        
+
+public void adjustQTY(){
+			
+	try {
+		adjdocno = lbldocno.getValue();
+		adjdocdate = lbldocdate.getValue();
+		adjitemcode = lblitemcode.getValue();
+		adjqty = Double.toString(dblqty.getValue());
+		adjunitcode = lblunitcode.getValue();
+		pvapcodeadd = lblapcode.getValue();
+		
+		
+		//set date time
+		getdocdate =  lbldocdate.getValue();
+		vyear = getdocdate.substring(6);
+		String vdate=getdocdate.substring(0,6);
+   		Integer xInt1 = Integer.parseInt(vyear);
+   		if (xInt1 > 2500){
+   			Integer bInt= xInt1-543;
+   			vyear1= Integer.toString(bInt);
+   		}else {
+   			vyear1= Integer.toString(xInt1);
+   		}
+   		adjdocdate=vdate.concat(vyear1);
+		publicconnection();
+		Statement sad = vConnectdb.createStatement();
+		sad.executeQuery("exec usp_pr_InsertstkRequestext_Profit 0,'"+adjdocno+"','"+adjdocdate+"','"+adjitemcode+"',"+adjqty+",'"+adjunitcode+"','"+pvapcodeadd+"','"+vuser+"',"+pvlinenumber+",'-'"+
+						" exec USP_NP_Roderlog  0,1,0,0,0");
+		ResultSet rs = sad.getResultSet();	
+	}
+	
+	catch(SQLException e){}
+	String vadqty;
+	Listitem ssitm = new Listitem();
+	ssitm = lsitems.getSelectedItem();
+	ssitm.setStyle("background:#ECDB8C");
+	
+	
+	Listcell ncl00 = (Listcell) ssitm.getChildren().get(0);
+	Listcell ncl01 = (Listcell) ssitm.getChildren().get(1);
+	Listcell ncl02 = (Listcell) ssitm.getChildren().get(2);
+	Listcell ncl03 = (Listcell) ssitm.getChildren().get(3);
+	Listcell ncl04 = (Listcell) ssitm.getChildren().get(4);
+	Listcell ncl05 = (Listcell) ssitm.getChildren().get(5);
+	Listcell ncl06 = (Listcell) ssitm.getChildren().get(6);
+	Listcell ncl07 = (Listcell) ssitm.getChildren().get(7);
+	Listcell ncl08 = (Listcell) ssitm.getChildren().get(8);
+	Listcell ncl09 = (Listcell) ssitm.getChildren().get(9);
+	Listcell ncl10 = (Listcell) ssitm.getChildren().get(10);
+	Listcell ncl11 = (Listcell) ssitm.getChildren().get(11);
+	Listcell ncl12 = (Listcell) ssitm.getChildren().get(12);
+	Listcell ncl13 = (Listcell) ssitm.getChildren().get(13);//button adjust
+	Listcell ncl14 = (Listcell) ssitm.getChildren().get(14);//apcode
+	//ncl01.setLabel("5.00");	
+	vgetdbx=dblqty.getValue();
+	ncl04.setLabel(numformat.format(vgetdbx));
+	ncl04.setStyle("font-weight: bold; color:red;");
+	ssitm.appendChild(ncl00);
+	ssitm.appendChild(ncl01);
+	ssitm.appendChild(ncl02);
+	ssitm.appendChild(ncl03);
+	ssitm.appendChild((ncl04));
+	ssitm.appendChild(ncl05);
+	ssitm.appendChild(ncl06);
+	ssitm.appendChild(ncl07);
+	ssitm.appendChild(ncl08);
+	ssitm.appendChild(ncl09);
+	ssitm.appendChild(ncl10);
+	ssitm.appendChild(ncl11);
+	ssitm.appendChild(ncl12);
+	ssitm.appendChild(ncl13);
+	ssitm.appendChild(ncl14);
+	vsgb1();
+	
+}
+
+public void rejectdvs(){
+	adjdocno = lbldocno.getValue();
+	adjdocdate = lbldocdate.getValue();
+	adjitemcode = lblitemcode.getValue();
+	adjqty = Double.toString(dblqty.getValue());
+	adjunitcode = lblunitcode.getValue();
+
+	//set date time
+	getdocdate =  lbldocdate.getValue();
+	vyear = getdocdate.substring(6);
+	String vdate=getdocdate.substring(0,6);
+		Integer xInt1 = Integer.parseInt(vyear);
+		if (xInt1 > 2500){
+			Integer bInt= xInt1-543;
+			vyear1= Integer.toString(bInt);
+		}else {
+			vyear1= Integer.toString(xInt1);
+		}
+		adjdocdate=vdate.concat(vyear1);
+		
+	try{
+	publicconnection();
+	Statement sad = vConnectdb.createStatement();
+	sad.executeQuery("exec usp_pr_rejectstkrequestsub '"+adjdocno+"','"+adjdocdate+"','"+adjitemcode+"','"+adjunitcode+"','"+vuser+"',"+pvlinenumber+""+
+					 " exec USP_NP_Roderlog  0,0,0,0,1");
+				ResultSet rs = sad.getResultSet();
+	}
+	catch(SQLException e){}
+	vsgb1();
+}
+public void vsgb1(){
+	 gbp01.setVisible(true);
+	 gbp02.setVisible(false);
+}
+public void vsgb2(){
+	 gbp01.setVisible(false);
+	 gbp02.setVisible(true);
+}
+public void vsgb3(){
+	gbp01.setVisible(false);
+	gbx2.setVisible(true);
+}
+public void vsgb4(){
+	gbp01.setVisible(true);
+	gbx2.setVisible(false);
+}
+
+
+
+	]]>
+</zscript>
+
+</groupbox>
+
+<groupbox id="gbx2" width="820" visible="false">
+<div align="none">
+<groupbox width="810px">
+<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right"/>
+			<column label="" width="680px" align="left"/>
+		</columns>
+		<rows>
+			<row><label value="รหัสสินค้า :" /><label id="lblitemcodes" style="font-weight:bold; color:#EC4E00;"/>	
+			</row>
+			<row><label value="ชื่อสินค้า : " /><label id="lblitemnames" style="font-weight:bold; color:#EC4E00;"/>
+			</row>
+		</rows>
+	</grid>
+<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right" />
+			<column label="" width="280px" align="left" />
+			<column label="" width="120px" align="right"/>
+			<column label="" width="280px" align="left" />
+		</columns>
+		<rows>
+			<row><label value="จำนวนขอซื้อ :" /><label id="lblqtys" style="font-weight:bold; color:#EC4E00;"/><label value="หน่วยนับซื้อ : " /><label id="lbldefbuyunitcodes" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="หน่วยนับสต็อก :" /><label id="lbldefstkunitcodes" style="font-weight:bold; color:blue;"/><label value="หน่วยนับหลัก : " /><label id="lblunitcodes" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="จำนวนวันที่ต้องการ :" /><hbox><label id="lblwantdays" style="font-weight:bold; color:#EC4E00;"/><label value="วัน" style="font-weight:normal; color:blue"/></hbox><label value="วันที่ต้องการ : " /><label id="lblwantdates" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="ราคาซื้อล่าสุด :" /><label id="lbllastbuyprices" style="font-weight:bold; color:blue;" visible="true"/><label value="สถานะสินค้า : " /><label id="lblitemstatuss" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="เกรด :" /><label id="lblgrades" style="font-weight:bold; color:blue;" tooltip="gradedescription"/><label value="สินค้าขายดี : " /><label id="lblreddots" style="font-weight:bold; color:blue;" tooltip="redotdescription"/>
+			</row>
+			<row><label value="จุดที่ควรสั่งซื้อ :" /><label id="lblorderpoints" style="font-weight:bold; color:blue;"/><label value="ราคาขาย : " /><label id="lblsalepriceapp" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="จุดสูงสุด :" /><label id="lblstockmaxs" style="font-weight:bold; color:blue;"/><label value="จุดต่ำสุด: " /><label id="lblstockmins" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row><label value="Department: " /><label id="lbldeparts" style="font-weight:bold; color:blue;"/><label value="เจ้าหนี้ : " /><label id="lblapnames" style="font-weight:bold; color:blue;"/>
+			</row>			
+			<row><label value="ทีมขาย :" /><label id="lblsaleteams" style="font-weight:bold; color:blue;"/><label value="อัตราส่วน : " /><label id="lblrates" style="font-weight:bold; color:blue;"/>
+			</row>
+						
+		</rows>
+	</grid>
+	
+	<grid width="800px">
+		<columns>
+			<column label="" width="120px" align="right" />
+			<column label="" width="280px" align="left" />
+			<column label="" width="120px" align="right"/>
+			<column label="" width="280px" align="left" />
+		</columns>
+		<rows>
+			<row style="background-color:#88B8FF"><label value="เลขที่เอกสาร : "/><label id="lbldocnos" style="font-weight:bold; color:blue;"/><label value="วันที่เอกสาร : "/><label id="lbldocdates" style="font-weight:bold; color:blue;"/>	
+			</row>
+			<row style="background-color:#88B8FF"><label value="ผู้สร้างเอกสาร : "/><label id="lblcreators" style="font-weight:bold; color:blue;"/><label value="วันที่สร้าง : "/><label id="lblcreatedates" style="font-weight:bold; color:blue;"/>
+			</row>
+			<row style="background-color:#88B8FF"><label value="ผู้เสนอซื้อ : " /><label id="lblworkmans" style="font-weight:bold; color:blue;"/><label value="คำอธิบาย : " /><label id="lblmydescs" style="font-weight:bold; color:blue;"/>			
+			</row>
+		</rows>
+	</grid>
+<listbox id="headprs" visible="false">
+	<listhead>
+		<listheader label="เลขที่เอกสาร" />
+		<listheader label="วันที่เอกสาร" />
+		<listheader label="ผู้สร้าง" />
+		<listheader label="วันที่สร้าง" />
+		<listheader label="ผู้เสนอซื้อ" />
+		<listheader label="คำอธิบาย" />
+	</listhead>	
+</listbox>
+</groupbox>
+</div>
+
+<groupbox width="800px">
+<listbox >
+	<listhead>
+		<listheader label="คลัง" width="100px"/>
+		<listheader label="ยอดคงเหลือ" align="right"/>
+		<listheader label="ยอดค้างรับ"  align="right"/>
+		<listheader label="ยอดค้างส่ง"  align="right"/>
+		<listheader label="ยอดจอง"  align="right"/>
+		<listheader label="ยอดขายเฉลี่ย/สัปดาห์จาก  12 สัปดาห์" align="right"/>		
+	</listhead>	
+	<listitem>
+		<listcell label="S01" style="font-size:12; font-weight:bold; color:#0429E0;"/>
+		<listcell><label id="lblrmqtys01s" /></listcell>
+		<listcell><label id="lblrminqtys01s" /></listcell>
+		<listcell><label id="lblrmoutqtys01s" /></listcell>
+		<listcell><label id="lblrvqtys01s" /></listcell>
+		<listcell><label id="lblsl3ms01s" /></listcell>
+	</listitem>
+	<listitem>
+		<listcell label="S02" style="font-size:12; font-weight:bold; color:#E24A00;"/>
+		<listcell><label id="lblrmqtys02s" /></listcell>
+		<listcell><label id="lblrminqtys02s" /></listcell>
+		<listcell><label id="lblrmoutqtys02s" /></listcell>
+		<listcell><label id="lblrvqtys02s" /></listcell>
+		<listcell><label id="lblsl3ms02s" /></listcell>
+	</listitem>
+	<listfoot>
+	<listfooter><label value="รวมทั้งหมด" style="font-weight:bold;" /></listfooter>
+	<listfooter><label id="lblrmqtys" style="font-weight:bold;" /></listfooter>
+	<listfooter><label id="lblrminqtys" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblrmoutqtys" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblrvqtys" style="font-weight:bold;"/></listfooter>
+	<listfooter><label id="lblsumsales" style="font-weight:bold;"/></listfooter>	
+	</listfoot>
+</listbox>
+<panel title="ยอดคงเหลือตามชั้นเก็บ" border="normal" collapsible="true" open="false" >
+<panelchildren>
+<listbox id="lbxshelfinfos" >
+	<listhead>
+		<listheader label="คลัง" width="100px"/>
+		<listheader label="ชื่อชั้นเก็บ" align="left"/>
+		<listheader label="จำนวน"  align="right"/>
+		<listheader label="หน่วยนับ"  align="left"/>
+	</listhead>	
+</listbox>
+</panelchildren>
+</panel>
+<label id="lblapcodes" visible="false" />
+</groupbox>
+<groupbox width="800px">
+<div align="left">
+<hbox><label value="จำนวนขอซื้อ : " style="font-size:25; font-weight:bold;" width="180px"/><doublebox id="dblqtys" format="#,##0.00" style="font-size:28px; font-weight:bold; color:red; text-align:right;" width="180px" height="32px" />
+<label id="lbltests" visible="false"/>
+<button label="อนุมัติ" width="100px" height="50px" image="/images/bok.png">
+<attribute name="onClick">
+   // in disable case .
+    if(dblqtys.getValue() == 0){
+                	Messagebox.show("ไม่สามารถ Addjust ค่า 0.00 ได้ หากไม่อนุมัติการซื้อกรุณายกเลิกรายการสินค้านี้",
+                	"Warning", Messagebox.OK,
+                	Messagebox.INFORMATION );	
+                }else
+              {
+       
+	    Messagebox.show("คุณต้องการ Addjust พร้อมกับอนุมัติข้อมูลนี้?",
+	    "Question", Messagebox.OK | Messagebox.CANCEL,
+	    Messagebox.QUESTION,
+	        new org.zkoss.zk.ui.event.EventListener(){
+	            public void onEvent(Event e){
+	                if("onOK".equals(e.getName())){                	
+	                   	SGMadjustApproveQTY();
+	                }else if("onCancel".equals(e.getName())){
+	                    alert("กรณีที่ไม่ได้ปรับเพิ่มลดจำนวนให้ Adjust ตามจำนวนที่ขอมา.");
+	                }
+	                 
+	                /* Event Name Mapping list
+	                Messagebox.YES = "onYes";
+	                Messagebox.NO  = "onNo";
+	                Messagebox.RETRY = "onRetry";
+	                Messagebox.ABORT = "onAbort";
+	                Messagebox.IGNORE = "onIgnore";
+	                Messagebox.CANCEL = "onCancel";
+	                Messagebox.OK = "onOK";
+	                */
+            }
+        }
+    );
+    
+	}
+</attribute>
+</button>
+
+
+<button label="ยกเลิก" width="100px" height="50px" image="/images/bcancel.png">
+<attribute name="onClick">
+    //in disable case .
+    Messagebox.show("คุณแน่ใจว่าจะยกเลิกรายการนี้ ?",
+    "Question", Messagebox.OK | Messagebox.CANCEL,
+    Messagebox.QUESTION,
+        new org.zkoss.zk.ui.event.EventListener(){
+            public void onEvent(Event e){
+                if("onOK".equals(e.getName())){
+                   SGMreject();
+                }
+                 
+                /* Event Name Mapping list
+                Messagebox.YES = "onYes";
+                Messagebox.NO  = "onNo";
+                Messagebox.RETRY = "onRetry";
+                Messagebox.ABORT = "onAbort";
+                Messagebox.IGNORE = "onIgnore";
+                Messagebox.CANCEL = "onCancel";
+                Messagebox.OK = "onOK";
+                */
+            }
+        }
+    );
+</attribute>
+</button>
+<button label="กลับหน้ารายการ" width="150px" height="50px" onClick="vsgb4();" image="/images/bback.png" />
+</hbox>
+</div>
+</groupbox>
+<zscript>
+<![CDATA[
+import org.zkoss.zul.Doublebox;
+//----------
+	String vyear2;
+	String pvapcode1;
+
+
+public void SGMslaprove(){
+	Listitem la = new Listitem();
+	la = lspr.getSelectedItem();
+	Listcell ls1 =(Listcell) la.getChildren().get(4); //itemcode
+	Listcell ls2 = (Listcell) la.getChildren().get(5); //itemname
+	Listcell ls4 = (Listcell) la.getChildren().get(7); //adjust qty
+	Listcell ls10 =(Listcell) la.getChildren().get(13); //docno
+	Listcell ls13 = (Listcell) la.getChildren().get(16); //linenumber
+	pvitemcode = ls1.getLabel();
+	pvitemname =ls2.getLabel();
+	pvadjqty = ls4.getLabel();
+	pvprno = ls10.getLabel();
+	pvlinenumber = ls13.getLabel();
+	gbp01.setVisible(false);
+	gbp02.setVisible(false);
+	gbx2.setVisible(true);
+	//lblitemcode.setValue(pvitemcode);
+	//lblitemname.setValue(pvitemname);
+	//dblqty.setValue(Double.parseDouble(pvadjqty));	
+}
+
+public void loadapprovedetail(){
+	Double v1=0.00, v2=0.00, vtotal=0.00;
+	//dblqtys.setDisabled(true);
+	String apvQry;
+	try{
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement stm = conn.createStatement();
+		apvQry="exec usp_pr_searchreordernotapproveitemdetails_Profit 0,'"+pvprno+"','"+pvitemcode+"','"+vprofit+"'";
+		System.out.println("approveDetail = "+apvQry);
+		stm.executeQuery(apvQry);	
+		ResultSet rsmg = stm.getResultSet();
+		/*
+		while(headpr.getItemCount()>0){
+			headpr.removeItemAt(0);
+		}
+		*/
+		while(rsmg.next()){
+			
+			v1=rsmg.getDouble("sumsaleqty3monthagos01");
+			v2=rsmg.getDouble("sumsaleqty3monthagos02");
+			vtotal=v1+v2;
+			
+			lbldocnos.setValue(rsmg.getString("docno"));
+			lbldocdates.setValue(dtmformat.format(rsmg.getDate("docdate")));
+			lblcreators.setValue(rsmg.getString("creatorcode"));
+			lblcreatedates.setValue(dtmformat.format(rsmg.getDate("createdatetime")));
+			lblworkmans.setValue(rsmg.getString("workmanname"));
+			lblmydescs.setValue(rsmg.getString("mydescription"));
+			lblitemcodes.setValue(rsmg.getString("itemcode"));
+			lblitemnames.setValue(rsmg.getString("itemname"));
+			lblqtys.setValue(numformat.format(rsmg.getDouble("qty")));
+			lbldefbuyunitcodes.setValue(rsmg.getString("defbuyunitcode"));
+			lbldefstkunitcodes.setValue(rsmg.getString("defstkunitcode"));
+			lblunitcodes.setValue(rsmg.getString("unitcode"));
+			lblwantdays.setValue(rsmg.getString("wantday"));
+			// ราคาซื้อล่าสุด
+			lblgrades.setValue(rsmg.getString("grade"));
+			lblreddots.setValue(rsmg.getString("reddot"));//-------------Reddot
+			lblitemstatuss.setValue(rsmg.getString("itemstatus"));
+			lblorderpoints.setValue(numformat.format(rsmg.getDouble("orderpoint")));
+			lblstockmaxs.setValue(numformat.format(rsmg.getDouble("stockmax")));
+			lblstockmins.setValue(numformat.format(rsmg.getDouble("stockmin")));
+			lblwantdates.setValue(dtmformat.format(rsmg.getDate("wantdate")));
+			lbllastbuyprices.setValue("xxx.xx");
+			lbldeparts.setValue(rsmg.getString("departname"));
+			pvapcode1 = rsmg.getString("apcode");
+			lblapnames.setValue(rsmg.getString("apname"));
+			lblsaleteams.setValue(rsmg.getString("expertname"));
+			lblrates.setValue(numformat.format(rsmg.getDouble("rate1")));
+			lblsalepriceapp.setValue(numformat.format(rsmg.getDouble("saleprice1")));
+			lblrmqtys01s.setValue(numformat.format(rsmg.getDouble("remainqtys01")));
+			lblrminqtys01s.setValue(numformat.format(rsmg.getDouble("remaininqtys01")));
+			lblrmoutqtys01s.setValue(numformat.format(rsmg.getDouble("remainoutqtys01")));
+			lblrvqtys01s.setValue(numformat.format(rsmg.getDouble("reserveqtys01")));
+			lblsl3ms01s.setValue(numformat.format(rsmg.getDouble("sumsaleqty3monthagos01")));
+			lblrmqtys02s.setValue(numformat.format(rsmg.getDouble("remainqtys02")));
+			lblrminqtys02s.setValue(numformat.format(rsmg.getDouble("remaininqtys02")));
+			lblrmoutqtys02s.setValue(numformat.format(rsmg.getDouble("remainoutqtys02")));
+			lblrvqtys02s.setValue(numformat.format(rsmg.getDouble("reserveqtys02")));
+			lblsl3ms02s.setValue(numformat.format(rsmg.getDouble("sumsaleqty3monthagos02")));
+			lblrmqtys.setValue(numformat.format(rsmg.getDouble("stockqty")));
+			lblrminqtys.setValue(numformat.format(rsmg.getDouble("remaininqty")));
+			lblrmoutqtys.setValue(numformat.format(rsmg.getDouble("remainoutqty")));
+			lblrvqtys.setValue(numformat.format(rsmg.getDouble("reserveqty")));
+			lblsumsales.setValue(numformat.format(vtotal));
+			lbltests.setValue(pvlinenumber);
+			nqty=rsmg.getDouble("qty");
+			naddqty=rsmg.getDouble("adjustqty2");
+			iadj = rsmg.getInt("isadjust2");
+			
+			if(nqty==naddqty || iadj==1){
+				iaddqty=nqty;
+			}else{
+				iaddqty=nqty;
+			}			
+			dblqtys.setValue(iaddqty);
+			vsgb3();
+		}			
+		
+	}catch(SQLException e){}
+}
+  
+
+public void SGMadjustApproveQTY(){
+			
+	try {
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		adjdocno = lbldocnos.getValue();
+		adjdocdate = lbldocdates.getValue();
+		adjitemcode = lblitemcodes.getValue();
+		adjqty = Double.toString(dblqtys.getValue());
+		adjunitcode = lblunitcodes.getValue();
+
+		
+		//set date time
+		getdocdate =  lbldocdates.getValue();
+		vyear = getdocdate.substring(6);
+		String vdate=getdocdate.substring(0,6);
+   		Integer xInt1 = Integer.parseInt(vyear);
+   		if (xInt1 > 2500){
+   			Integer bInt= xInt1-543;
+   			vyear1= Integer.toString(bInt);
+   		}else {
+   			vyear1= Integer.toString(xInt1);
+   		}
+   		adjdocdate=vdate.concat(vyear1);
+		
+		
+		//---------
+
+			
+			Statement sadb = conn.createStatement();
+			//adjust with approve request " exec USP_NP_UpdateStkRequestStatus '"+adjdocno+"'"+
+			sadb.executeQuery("exec usp_pr_InsertstkRequestext_Profit 1,'"+adjdocno+"','"+adjdocdate+"','"+adjitemcode+"',"+adjqty+",'"+adjunitcode+"','"+pvapcode1+"','"+vuser+"',"+pvlinenumber+",'-'"+
+					" exec usp_pr_InsertstkRequestext_Profit 2,'"+adjdocno+"','"+adjdocdate+"','"+adjitemcode+"',"+adjqty+",'"+adjunitcode+"','"+pvapcode1+"','"+vuser+"',"+pvlinenumber+",'-'"+
+					" exec USP_PR_ConsolidatePRVendor_Profit '"+vuser+"'"+
+					" exec USP_NP_Roderlog  0,0,1,0,0"+
+					" exec USP_NP_UpdateStkRequestStatus");
+		ResultSet rsv = sadb.getResultSet();
+	}
+	
+	catch(SQLException e){}
+	/*  Update 27/3/2012
+	String vadqty;
+	Listitem ssitm = new Listitem();
+	ssitm = lspr.getSelectedItem();
+	ssitm.setStyle("background:#ECDB8C");
+	
+	
+	Listcell vcl00 = (Listcell) ssitm.getChildren().get(0);
+	Listcell vcl01 = (Listcell) ssitm.getChildren().get(1);
+	Listcell vcl02 = (Listcell) ssitm.getChildren().get(2);
+	Listcell vcl03 = (Listcell) ssitm.getChildren().get(3);
+	Listcell vcl04 = (Listcell) ssitm.getChildren().get(4);
+	Listcell vcl05 = (Listcell) ssitm.getChildren().get(5);
+	Listcell vcl06 = (Listcell) ssitm.getChildren().get(6);
+	Listcell vcl07 = (Listcell) ssitm.getChildren().get(7);
+	Listcell vcl08 = (Listcell) ssitm.getChildren().get(8);
+	Listcell vcl09 = (Listcell) ssitm.getChildren().get(9);
+	Listcell vcl10 = (Listcell) ssitm.getChildren().get(10);
+	Listcell vcl11 = (Listcell) ssitm.getChildren().get(11);
+	Listcell vcl12 = (Listcell) ssitm.getChildren().get(12);
+	Listcell vcl13 = (Listcell) ssitm.getChildren().get(13);
+	Listcell vcl14 = (Listcell) ssitm.getChildren().get(14);
+	Listcell vcl15 = (Listcell) ssitm.getChildren().get(15);
+	//Listcell ncl12 = (Listcell) ssitm.getChildren().get(12);
+	//ncl01.setLabel("5.00");	
+	vgetdbx=dblqtys.getValue();
+	vcl04.setLabel(numformat.format(vgetdbx));
+	vcl05.setLabel(numformat.format(vgetdbx));
+	vcl04.setStyle("font-weight: bold; color:red;");
+	vcl05.setStyle("font-weight: bold; color:red;");
+	ssitm.appendChild(vcl00);
+	ssitm.appendChild(vcl01);
+	ssitm.appendChild(vcl02);
+	ssitm.appendChild(vcl03);
+	ssitm.appendChild((vcl04));
+	ssitm.appendChild(vcl05);
+	ssitm.appendChild(vcl06);
+	ssitm.appendChild(vcl07);
+	ssitm.appendChild(vcl08);
+	ssitm.appendChild(vcl09);
+	ssitm.appendChild(vcl10);
+	ssitm.appendChild(vcl11);
+	ssitm.appendChild(vcl12);
+	ssitm.appendChild(vcl13);	
+	ssitm.appendChild(vcl14);
+	ssitm.appendChild(vcl15);
+	*/
+	loadaproveitems();
+	vsgb4();
+	
+	
+}
+
+public void SGMreject(){
+	try {
+		adjdocno = lbldocnos.getValue();
+		adjdocdate = lbldocdates.getValue();
+		adjitemcode = lblitemcodes.getValue();
+		adjqty = Double.toString(dblqtys.getValue());
+		adjunitcode = lblunitcodes.getValue();
+
+		
+		//set date time
+		getdocdate =  lbldocdates.getValue();
+		vyear = getdocdate.substring(6);
+		String vdate=getdocdate.substring(0,6);
+   		Integer xInt1 = Integer.parseInt(vyear);
+   		if (xInt1 > 2500){
+   			Integer bInt= xInt1-543;
+   			vyear2= Integer.toString(bInt);
+   		}else {
+   			vyear2= Integer.toString(xInt1);
+   		}
+   		adjdocdate=vdate.concat(vyear2);	
+
+		
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement sad1 = conn.createStatement();
+		sad1.executeQuery("exec usp_pr_InsertstkRequestext_Profit 3,'"+adjdocno+"','"+adjdocdate+"','"+adjitemcode+"',"+adjqty+",'"+adjunitcode+"','"+pvapcode1+"','"+vuser+"',"+pvlinenumber+",'-'");
+		sad1.executeQuery(" exec USP_NP_Roderlog  0,0,0,1,0");
+		ResultSet rs = sad1.getResultSet();	
+		
+	}	
+	catch(SQLException e){}
+	vsgb4();
+}
+
+public void showchartdetail(){
+	Window cwin = (Window) Executions.createComponents("subdetail/approvedetail.zul",null, null);    	  		
+		cwin.setMaximizable(true);
+		try{
+		cwin.doModal();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+}
+public void shelfinfos(){
+	try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement si = conn.createStatement();
+		si.executeQuery("exec usp_pr_itemstockonhand '"+pvitemcode+"'");	
+		ResultSet rsi = si.getResultSet();
+		while(lbxshelfinfos.getItemCount()>0){
+			lbxshelfinfos.removeItemAt(0);
+		}
+		while(rsi.next()){
+			Listitem vli = new Listitem();
+			vli.appendChild(new Listcell(rsi.getString("whcode")));
+			vli.appendChild(new Listcell(rsi.getString("shelfcode")));
+			vli.appendChild(new Listcell(numformat.format(rsi.getDouble("qty"))));
+			vli.appendChild(new Listcell(rsi.getString("unitcode")));
+			lbxshelfinfos.appendChild(vli);			
+		}
+		/*lbxshelfinfo
+		if(lbxshelfinfo.getItemCount()==0){
+			Messagebox.show("ไม่มีสินค้านี้ในชั้นเก็บ ทั้ง 2 สาขา","information", Messagebox.OK,Messagebox.INFORMATION);
+		}
+		*/
+		
+	}catch(SQLException e){}
+}
+public void exitpage(){
+	Executions.sendRedirect("mainpage.zul");
+}
+	]]>
+</zscript>
+</groupbox>
+</div>
+</window>
+</zk>

@@ -1,0 +1,169 @@
+<?page title="ตรวจสอบ PR ผ่านการอนุมัติแล้ว" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="ตรวจสอบ PR ผ่านการอนุมัติแล้ว " border="normal" onCreate="checkuserlogin()" height="100%">
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vprofit;
+String vQry;
+
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="";
+vpassword="";
+
+
+Connection vConnectdb;        
+
+//----------------------
+String pvexpertcode="";
+String pvdocno="";
+
+//set format
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,##0.00");
+// set Class connect SQL jdbc
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+public void checkuserlogin(){
+	try{
+	Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	if(ck[0].getValue() == null || ck[0].getValue()==""){
+		//System.out.println("cookie = "+cookies);
+		Executions.sendRedirect("index.zul");		
+	} else
+		{
+		for (Cookie cookie : ck) {
+			if (cookie.getName().equals("cuser")) {
+				vuser =cookie.getValue();
+			}
+		}
+		for (Cookie ckps : ck) {
+			if (ckps.getName().equals("cpass")) {
+				vpassword =ckps.getValue();
+			}
+		}	
+		for (Cookie ckpf : ck) {
+			if (ckpf.getName().equals("ckprofitcode")) {
+				vprofit = ckpf.getValue();
+			}
+		}
+			loadExpertTeam();
+		}
+	}catch (Exception e){}
+}
+
+public void viewprapproved(){
+	String clitemcode;
+	String clitemname;
+	Integer n=0;
+	mclis.getItems().clear();
+	try{
+		if(cmbTeam.getSelectedIndex()>=0){
+			pvexpertcode =cmbTeam.getSelectedItem().getValue().toString();			
+			}else{pvexpertcode="";}
+		pvdocno=txtdocno.getValue();
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		vConnectdb =  DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = vConnectdb.createStatement();
+		vQry="exec usp_pr_StockRequestDaily_Cat '"+vprofit+"',1,'"+pvexpertcode+"','','','"+pvdocno+"'" ;
+		System.out.println(vQry);
+		s.executeQuery(vQry);
+		ResultSet rs = s.getResultSet();
+		
+		while(mclis.getItemCount()>0){
+			mclis.removeItemAt(0);
+		}
+		while(rs.next()){				
+			n+=1;
+			Listitem mli = new Listitem();
+			mli.appendChild(new Listcell(Integer.toString(n)));
+			mli.appendChild(new Listcell(rs.getString("itemcode")));
+			mli.appendChild(new Listcell(rs.getString("itemname")));
+			mli.appendChild(new Listcell(numformat.format(rs.getDouble("qty"))));
+			mli.appendChild(new Listcell(numformat.format(rs.getDouble("adjustqty1"))));
+			mli.appendChild(new Listcell(numformat.format(rs.getDouble("adjustqty2"))));
+			mli.appendChild(new Listcell(rs.getString("unitcode")));
+			mli.appendChild(new Listcell(rs.getString("grade")));
+			mli.appendChild(new Listcell(rs.getString("reddot")));
+			mli.appendChild(new Listcell(rs.getString("apname")));
+			mli.appendChild(new Listcell(rs.getString("docno")));
+			mli.appendChild(new Listcell(rs.getString("linenumber")));
+			mli.appendChild(new Listcell(rs.getString("profitcenter")));
+			mclis.appendChild(mli);			
+			
+		}
+		
+	}catch(SQLException e){ }
+}
+
+public void loadExpertTeam(){
+	try {
+	    
+	    vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_pr_searchsaleteam_Cat");
+		ResultSet rs = s.getResultSet();
+		while(rs.next()){
+			Comboitem cbxitm = new Comboitem();
+			cbxitm.setLabel(rs.getString("saleteam"));
+			cbxitm.setValue(rs.getString("expertcode"));				
+			cmbTeam.appendChild(cbxitm);		
+		}	
+	} catch (SQLException e){}
+	
+}        
+	]]>
+</zscript>
+
+<groupbox style="background:#00859D">
+<hbox>
+<label value="ทีมขาย :" /><combobox id="cmbTeam"/> <label value="เลขที่เอกสาร  :" /><textbox id="txtdocno"/><button label="ตกลง" onClick="viewprapproved()" />
+</hbox>
+</groupbox>
+<listbox id="mclis" height="520px">
+	<listhead>
+	<listheader label="No." width="35px"/>
+	<listheader label="รหัส" width="130px" align="left"/>
+	<listheader label="สินค้า" width="250px" align="left"/>
+	<listheader label="จำนวนขอซื้อ" align="right" width="75px"/>
+	<listheader label="AdjustQTY" align="right" width="75px"/>
+	<listheader label="ApprovedQTY" align="right" width="90px" style="background:green; font-size:bold; color:#FFFFFF;"/>
+	<listheader label="หน่วยนับ" width="60px" align="center"/>
+	<listheader label="เกรด" width="35px" align="center"/>
+	<listheader label="Reddot" width="50px" align="center"/>
+	<listheader label="เจ้าหนี้" width="180px" align="left"/>
+	<listheader label="เลขที่ PR" width="180px" align="left"/>
+	<listheader visible="false" />	
+	<listheader label="ศูนย์ธุรกิจ" align="center"/>
+</listhead>
+</listbox>
+</window>
+</zk>

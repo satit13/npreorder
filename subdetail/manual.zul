@@ -1,0 +1,24 @@
+<?page title="" contentType="text/html;charset=UTF-8"?>
+<zk>
+
+
+<vbox>
+<div height="450px" align="center">
+<label value="การแสดงผลคู่มือสามารถทำงานได้ดีใน Google Chrome, Firfox v.5 ขึ้นไป และ IE8" />
+    <fisheyebar id="fsb" attachEdge="top"
+        itemWidth="80" itemHeight="80" itemMaxHeight="160" itemMaxWidth="160">
+        	<fisheye label="Go2UserGuide" onClick='Executions.getCurrent().sendRedirect("http://192.168.0.57:8080/NPReorder/subdetail/userguide.html","_new")'
+            image="img/c180.png" />  
+            <fisheye label="Go2UserGuide" onClick='Executions.getCurrent().sendRedirect("http://192.168.0.57:8080/NPReorder/subdetail/userguide.html","_new")'
+            image="img/c180.png" />
+            <fisheye label="Go2UserGuide" onClick='Executions.getCurrent().sendRedirect("http://192.168.0.57:8080/NPReorder/subdetail/userguide.html","_new")'
+            image="img/c180.png" />
+            <fisheye label="Go2UserGuide" onClick='Executions.getCurrent().sendRedirect("http://192.168.0.57:8080/NPReorder/subdetail/userguide.html","_new")'
+            image="img/c180.png" />      
+    </fisheyebar>
+    
+</div>
+</vbox>
+
+
+</zk>

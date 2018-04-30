@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zk>
+
+<zscript>
+<![CDATA[
+    
+import java.io.*;
+import java.lang.*;
+import javax.annotation.Resource;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import javax.servlet.http.HttpSession;
+import org.zkoss.zk.ui.Executions;
+
+String vusername;
+String vuserlevel;
+String vpass;
+Integer vintULevel;
+public void vcontrl(){
+}
+
+void validate() {
+	//if (session.getAttribute("User") == null) {
+		try{
+			Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+			for (Cookie cookie : ck) {
+				if (cookie.getName().equals("cuser")) {
+				vusername =cookie.getValue();
+				}
+			}
+			for (Cookie ckpas : ck) {
+				if (ckpas.getName().equals("cpass")) {
+					vpass =ckpas.getValue();
+				}
+			}
+			for (Cookie cklv : ck) {
+				if (cklv.getName().equals("ulevel")) {
+					vuserlevel =cklv.getValue();
+				}
+			}
+	
+	if(vusername == null || vusername =="" || vpass==null || vpass =="" ){
+		//System.out.println("cookie = "+cookies);
+		Executions.sendRedirect("index.zul");		
+	} else
+	{		
+		page.setTitle("NP-Reorder Login Name : "+vusername);
+		muser.setLabel(vusername);
+		muser.setStyle("font-size:normal; color:#047ADD;");
+	}
+	
+	}catch (Exception e){}
+	
+	//}
+}
+public void clrusercookies(){
+	try{
+		HttpServletResponse response = (HttpServletResponse)Executions.getCurrent().getNativeResponse();
+    	Cookie userCookie = new Cookie("user", "");
+    	Cookie passCookie = new Cookie("pass", ""); 
+    	response.addCookie(userCookie); 
+    	response.addCookie(passCookie);
+    	Executions.sendRedirect("index.zul");
+	}catch (Exception e){}
+	
+}
+	]]>
+</zscript>
+<borderlayout id="main" onCreate="validate()">
+	<north border="none" size="30px" collapsible="true">
+		<div>
+	
+	<menubar id="menubar">		
+		<menu label="จัดซื้อ" id="mnby" src="/images/bydept.png" >
+			<menupopup>
+			<!-- 
+				<menuitem src="/images/itemlist.png" label="สินค้ารอพิจารณาขอซื้อ " >
+				<attribute name="onClick">	
+
+					ctr.setSrc("itemwizardv1.zul");			
+				
+				</attribute>						
+				</menuitem>
+				-->
+				 
+				<menu src="/images/appdoclist.png" label="เสนอซื้อสินค้า">
+                            <menupopup>
+                                <menuitem label="สินค้ารอพิจารณาขอซื้อ " src="/images/blue_button.png">
+								<attribute name="onClick">			
+						
+									ctr.setSrc("itemwizardv1.zul");						
+						
+								</attribute>
+								</menuitem>
+								<!-- 
+								<menuitem label="พิมพ์รายงานใบเสนอซื้อสินค้าผ่าน E-mail" src="/images/blue_button.png">
+								<attribute name="onClick">
+									ctr.setSrc("printreport_rt_s01.zul");
+									//ctr.setSrc("reportitemrequest.zul");
+									// Executions.getCurrent().sendRedirect("reportitemrequest.zul","_blank");   	  		
+ 								
+								</attribute>
+								</menuitem>
+								 -->
+								<menuitem label="ตรวจสอบ PR ที่อนุมัติแล้ว" src="/images/blue_button.png">
+								<attribute name="onClick">
+									ctr.setSrc("checkprapproved.zul");
+								</attribute>
+								</menuitem>
+								
+								
+								<menuitem label="พิมพ์รายงานสินค้าถึงจุดสั่งซื้อ" src="/images/blue_button.png">
+								<attribute name="onClick">
+									ctr.setSrc("reportitemorderpoint.zul");  	  		
+								</attribute>
+								</menuitem>
+								<!-- 
+								<menuitem label="พิมพ์รายงานใบ PR ที่ทำ PO แล้ว" src="/images/blue_button.png">
+								<attribute name="onClick">
+									ctr.setSrc("reportprgenedpo.zul");  	  		
+								</attribute> </menuitem>
+								
+								 -->
+								<menuitem label="ส่ง E-mail รายงานใบเสนอซื้ออนุมัติแล้วให้แผนกจัดซื้อ" src="/images/blue_button.png">
+								<attribute name="onClick">			
+								// alert("ยังไม่เปิดใช้งาน");
+								if(vuserlevel.equals("3")||vuserlevel.equals("5")){
+							 	   ctr.setSrc("printreport4by.zul");							 	
+							 	//ctr.setSrc("reportprapproved.zul");	
+							 	}
+							 	else{
+							 		alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+							 		}				
+						
+							</attribute>
+						</menuitem>
+                            </menupopup>
+                        </menu>
+				
+				<menu src="/images/ordering.png" label="จัดทำใบสั่งซื้อ" >
+					<menupopup>
+						<menuitem label="พิจารณาใบเสนอซื้อสำหรับทำ PO" src="/images/target.png">
+						<attribute name="onClick">
+							if(vuserlevel.equals("4")||vuserlevel.equals("5")||vuserlevel.equals("6")){
+							 	   ctr.setSrc("mcadjustqtyinlinecbx.zul");							 	
+							 	//ctr.setSrc("reportprapproved.zul");	
+							 	}
+							 	else{
+							 		alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+							 		}			
+						</attribute>
+						</menuitem>
+					
+						<menuitem label="ส่ง E-mailรายงานสำหรับอนุมัติ PO" src="/images/red_button.png">
+							<attribute name="onClick">			
+								// alert("ยังไม่เปิดใช้งาน");
+								if(vuserlevel.equals("4")||vuserlevel.equals("5")||vuserlevel.equals("6")){
+							 	   ctr.setSrc("sendmail2approvepo.zul");							 	
+							 	//ctr.setSrc("reportprapproved.zul");	
+							 		}
+							 		else{
+							 			alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+							 			}				
+						
+							</attribute>
+						</menuitem>
+						<menuitem label="ลงทะเบียน Vendor E-mail" src="/images/red_button.png">
+								<attribute name="onClick">
+									if(vuserlevel.equals("4")||vuserlevel.equals("5")||vuserlevel.equals("6")){
+										ctr.setSrc("vendorregister.zul");
+										}
+										else {
+											 alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+											 }
+								</attribute>
+						</menuitem>
+					</menupopup>
+				</menu>
+				
+				<menuitem src="/images/approved.png" label="อนุมัติใบสั่งซื้อ" >
+					<attribute name="onClick">
+					
+					vintULevel=Integer.parseInt(vuserlevel);
+					// if(vuserlevel.equals("5")){
+					System.out.println("Level="+vintULevel);
+					if(vintULevel==4||vintULevel>4){					
+							ctr.setSrc("approvepo.zul");
+						}else
+						{
+							alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+						}							
+				</attribute>
+				</menuitem>
+				
+				<menuitem label="E-mail/Fax" visible="false">
+					<attribute name="onClick">			
+					if(vuserlevel.equals("4")||vuserlevel.equals("5")||vuserlevel.equals("6")){					
+					// ctr.setSrc("mailpotovendor.zul");
+						ctr.setSrc("vendorregister.zul");
+					}else
+					{
+					alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+					}						
+						
+				</attribute>
+				</menuitem>
+				<menuitem label="ติดตามสถานะการสั่งซื้อสินค้า" image="/images/approvecheck.png" >
+					<attribute name="onClick">			
+					// if(vuserlevel.equals("5")){					
+					ctr.setSrc("itemstatus.zul");
+					// }else
+					// {
+					// alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+					// }						
+						
+				</attribute>
+				</menuitem>
+				<menuitem label="รายงานยืนยันการสั่งสินค้าอัตโนมัติ(Auto-PO)" image="/images/reportsub.png">
+					<attribute name="onClick">			
+					// if(vuserlevel.equals("5")){					
+					ctr.setSrc("/rp/reportpo.zul");
+					// }else
+					// {
+					// alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+					// }						
+						
+				</attribute>
+				</menuitem>					
+			</menupopup>
+		</menu>
+		<menu label="สินค้า" src="" >
+			<menupopup>
+				<menuitem label="สินค้า  A ไม่ได้เสนอซื้อ 2 เดือน" >
+				<attribute name="onClick">
+					ctr.setSrc("aitemnotrequest.zul");
+				</attribute>
+				</menuitem>
+				<menuitem label="สินค้า A ที่อนุมัติแล้วแต่ไม่ได้ทำ PO">
+				<attribute name="onClick">
+					ctr.setSrc("aitemnotpurchase.zul");
+				</attribute>
+				</menuitem>
+				<menuitem label="Smart Item" visible="false">
+				<attribute name="onClick">
+					alert("Now Developing");
+				</attribute>
+				</menuitem>
+			</menupopup>
+		
+		</menu>
+		<menu src="/images/sale.png" label="จัดขาย " onClick='Messagebox.show("ยังไม่เปิดใช้งาน")' visible="false">
+			<menupopup>
+				<menuitem label="บันทึกใบเสนอราคา" onClick="" />
+				<menuitem label="แก้ไขใบเสนอราคา" onClick="" />
+				<menuitem label="พิมพ์ใบเสนอราคา" onClick="" />
+			</menupopup>
+		</menu>
+			<menu src="/images/npbcap.png" label="เจ้าหนี้" onClick='Messagebox.show("ยังไม่เปิดใช้งาน")' visible="false">
+			<menupopup>
+			</menupopup>
+			</menu>
+		<menu src="/images/apcard.png" label="ลูกหนี้ " onClick='Messagebox.show("ยังไม่เปิดใช้งาน")' visible="false">
+			<menupopup>
+				<menuitem label="พิมพ์ใบวางบิล" onClick="" />
+				<menuitem label="พิมพ์ใบเสร็จรับเงิน" onClick="" />
+			</menupopup>
+		</menu>
+			<menu src="/img/Centigrade-Widget-Icons/Spyglass-16x16.png" label="สินค้าคงคลัง" onClick='Messagebox.show("ยังไม่เปิดใช้งาน")' visible="false">
+			<menupopup>
+			</menupopup>
+			</menu>
+			<menu src="/images/npsystem.png" label="ระบบ">
+			<menupopup>
+			<menuitem src="/images/log.png" label="Log" >
+					<attribute name="onClick">	
+					// System.out.println(vuserlevel);
+					if(vuserlevel.equals("5")){		
+					ctr.setSrc("/system/userlog.zul");					
+					}
+					else{
+					 	alert("คุณไม่มีสิทธิ์เข้าหน้าจอนี้");
+					 	}					
+						
+				</attribute>
+				</menuitem>				
+				<menuitem src="/images/log.png" label="User Guide" >
+					<attribute name="onClick">					
+					ctr.setSrc("/subdetail/uguide.html");
+				</attribute>
+				</menuitem>
+				<!-- 
+				<menuitem src="/images/log.png" label="ข้อเสนอแนะ" >
+					<attribute name="onClick">	
+					
+					//final Window winiss = (Window) Executions.createComponents("subdetail/rdissue.zul",null, null);
+						//winiss.doModal();				
+					ctr.setSrc("/subdetail/issuelist.zul");
+				</attribute>
+				</menuitem>
+				 -->
+			</menupopup>
+			</menu>
+			<menuitem src="/images/user.png" id="muser"/>
+			<menuitem src="/images/logout16.png" label="ออกจากระบบ">
+					<attribute name="onClick">
+						clrusercookies();
+					</attribute>
+		</menuitem>
+	</menubar>
+     <!--
+     <div sclass="demo-logo pointer" onClick='Executions.sendRedirect("http://www.zkoss.org")'>
+				<image width="90px" height="80px" src="/img/ZK-Logo.gif"/>
+			</div>
+		-->	
+		</div>
+	</north>
+
+	<center autoscroll="true" flex="true" id="mycenter">	
+		<include id="ctr"/>	
+	</center>
+
+</borderlayout>
+</zk>

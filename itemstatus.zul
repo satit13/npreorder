@@ -1,0 +1,189 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="ตรวจสอบสถานะการสั่งซื้อ" border="normal" onCreate="checkuserlogin()">
+<zscript>
+<![CDATA[
+
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+
+Connection conn;
+String vKeyword;
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,##0.00");
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+/*
+public void publicconnection(){
+	if(vuser !="" ||  vuser!=null){
+		try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		conn =  DriverManager.getConnection(vurl, vuser, vpassword);
+		//System.out.println("connect db");
+		}catch(SQLException e){}
+	}
+}
+*/
+public void checkuserlogin(){
+	try{
+		Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+		for (Cookie cookie : ck) {
+			if (cookie.getName().equals("cuser")) {
+				vuser =cookie.getValue();
+			}
+		}
+		for (Cookie ckps : ck) {
+			if (ckps.getName().equals("cpass")) {
+				vpassword =ckps.getValue();
+			}
+		}		
+		if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+			//System.out.println("cookie = "+cookies);
+			Executions.sendRedirect("index.zul");		
+		} 
+		
+		}catch (Exception e){}
+}
+public void loadstatus() {
+	Integer n=0;
+	Integer instatus;
+	lsstatus.getItems().clear();
+	
+	try {		
+		vKeyword = txtkeyword.getValue();
+		System.out.println(vKeyword);
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		conn =  DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s1 = conn.createStatement();
+		s1.executeQuery("exec USP_NP_ReorderItemFollowup '"+vKeyword+"'");
+		ResultSet rs1 = s1.getResultSet();
+		
+		while(lsstatus.getItemCount()>0){
+			lsstatus.removeItemAt(0);
+		}
+		while(rs1.next()){
+			n=n+1;
+			//System.out.println(n);
+			Listitem vli = new Listitem();
+			vli.appendChild(new Listcell(Integer.toString(n)));
+			vli.appendChild(new Listcell(rs1.getString("itemcode")));	
+			vli.appendChild(new Listcell(rs1.getString("itemname")));
+			vli.appendChild(new Listcell(rs1.getString("unitcode")));
+			vli.appendChild(new Listcell(numformat.format(rs1.getDouble("qty"))));
+			instatus = Integer.parseInt(rs1.getString("isstatus"));
+			Listcell lc = new Listcell();
+			if(instatus ==1){
+				lc.setLabel("Adjust");
+				lc.setStyle("text-align:center;color:#FB9006");
+				vli.appendChild(lc);
+				vli.setStyle("background:#93FDBB");
+			}else if(instatus==2){	
+				lc.setLabel("Aproved");
+				lc.setStyle("text-align:center; color:#060CFB");
+				vli.appendChild(lc);
+				vli.setStyle("background:#ADF275");
+			}else if(instatus==3){
+				lc.setLabel("Reject");
+				lc.setStyle("text-align:center; color:#DA0000");
+				vli.appendChild(lc);
+				vli.setStyle("background:#D0F426");				
+			}
+			else if(instatus==4){
+				lc.setLabel("Confirm");
+				lc.setStyle("text-align:center; font-size:11; font-weight:bold; color:#085101");
+				vli.appendChild(lc);
+				vli.setStyle("background:#38DA1E");				
+			}
+			else if(instatus==5){
+				lc.setLabel("Pending");
+				lc.setStyle("text-align:center;");
+				vli.appendChild(lc);
+				vli.setStyle("background:#2890FB");				
+			}
+			else if(instatus==6){
+				lc.setLabel("Cancel");
+				lc.setStyle("text-align:center;color:#FCFF06");
+				vli.appendChild(lc);
+				vli.setStyle("background:#ED0319; font-size:8; color:#FFFFFF");				
+			}
+			else if(instatus==7){
+				lc.setLabel("Received");
+				lc.setStyle("text-align:center;color:#FFFFFF");
+				vli.appendChild(lc);
+				vli.setStyle("background:#031EED");				
+			}else{
+				lc.setLabel("N/A");
+				lc.setStyle("text-align:center");
+				vli.appendChild(lc);
+				//vli.setStyle("background:#031EED");	
+			}
+			/*	case	a.status
+			when 1 then 'Adjust'
+			when 2 then 'Approved'
+			when 3 then 'SGM Reject'
+			when 4 then 'Confirm'
+			when 5 then 'Pending'
+			when 6 then 'Cancel'
+			when 7 then	'Received'
+			end 
+*/
+			
+			//vli.appendChild(new Listcell(rs1.getString("isstatus")));
+			vli.appendChild(new Listcell(rs1.getString("confirmno")));
+			vli.appendChild(new Listcell(rs1.getString("pono")));
+			vli.appendChild(new Listcell(rs1.getString("rvno")));
+			vli.appendChild(new Listcell(rs1.getString("rejectcode")));
+			vli.appendChild(new Listcell(rs1.getString("cancelcode")));
+			lsstatus.appendChild(vli);
+		}
+	} catch (SQLException e){}
+}
+]]>
+
+</zscript>
+<groupbox>
+<label value="คำค้นหาเป็นรหัสสินค้าหรือเลขที่ PR : "/><textbox id="txtkeyword" width="200px" onOK="loadstatus();"/><button label="OK" onClick="loadstatus();" />
+</groupbox>
+<listbox id="lsstatus" mold="paging" pageSize="30">
+	<listhead>
+		<listheader label="No." sort="auto" />
+		<listheader label="รหัสสินค้า" sort="auto" />
+		<listheader label="ชื่อสินค้า" />
+		<listheader label="หน่วยนับ" />
+		<listheader label="จำนวน" />
+		<listheader label="สถานะ" sort="auto" />
+		<listheader label="เลขที่อนุมัติ" sort="auto" />
+		<listheader label="เลขที่สั่งซื้อ" sort="auto" />
+		<listheader label="เลขที่ใบรับเข้า" sort="auto" />
+		<listheader label="ผู้ Reject" />
+		<listheader label="ผู้ยกเลิก" />
+	</listhead>
+</listbox>
+</window>
+</zk>

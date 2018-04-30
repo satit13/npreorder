@@ -1,0 +1,62 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="new page title" border="normal">
+<fileupload id="fup" label="Upload" onUpload="processMedia3(event.getMedias());"/>
+<textbox id="txtpath"/>
+<zscript>
+<![CDATA[
+import java.io.*;
+import java.lang.*;       
+import org.zkoss.util.media.Media;
+import org.zkoss.zul.Fileupload;
+
+public void processMedia3(Media[] mediac){	
+	String vpath;
+	String viname;
+	byte[] data;
+	//podocno=tdocno.getValue();
+	// vpath = "N:\\"+podocno+"\\";
+	//vpath="file://192.168.0.57/reorderfile"+podocno+"/";
+	//vpath="ubuntu2://var//www//imgreorder//"+podocno+"//";
+	// vpath="/usr/local/tomcat/webapps/NPreorder5/poimg/"+podocno+"/";
+	
+	if (mediac != null) {		
+        for (int i = 0; i<mediac.length; i++) {
+           // if (mediac[i] instanceof org.zkoss.image.Image) {            	
+               // fmpic3.setContent(mediac[i]);
+              viname= fup.getDir();
+               // System.out.println("after"+vimg3);
+                data = mediac[i].getByteData();      
+                txtpath.setValue(viname);
+              // File baseDir = new File(vpath);               
+			//	boolean ss =(new File(vpath)).mkdir();
+				/*
+                if (ss) {
+                	FileOutputStream out = new FileOutputStream(vpath+vimg3);
+                    out.write(data);
+                    out.flush();
+                    out.close();
+
+                  
+                }else {
+                	FileOutputStream out = new FileOutputStream(vpath+vimg3);
+                    out.write(data);
+                    out.flush();
+                    out.close();
+                }
+				*/
+             /*   
+            } else {
+                Messagebox.show("Not an image: " + mediac[i], "Error",
+                        Messagebox.OK, Messagebox.ERROR);
+                break; //not to show too many errors
+            }
+           */
+        }    
+        
+    }
+	}
+	]]>
+</zscript>
+</window>
+</zk>

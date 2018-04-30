@@ -1,0 +1,105 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window id="winap" border="normal" width="600px" onCreate="checkuserlogin();" >
+<label id="bapcode" value="${applicationScope['snapcode']}" visible="false" />
+<label id="bept" value="${applicationScope['snept']}" visible="false" />
+<label id="btype" value="${applicationScope['stype']}" visible="false" />
+<hbox>ข้อมูลเจ้าหนี้</hbox>
+<grid onCreate="loavdr();">
+		<columns>
+			<column label=""/>
+			<column label=""/>
+		</columns>
+		<rows>
+			<row><label value="รหัสเจ้าหนี้" /><label id="lblapcode1" style="font-size:15px; font-weight:bold; color:blue;"/>	
+			</row>
+			<row><label value="เจ้าหนี้" /><label id="lblapname1" style="font-size:15px; font-weight:bold; color:blue;"/>	
+			</row>
+			<row><label value="มูลค่า PO ค้างอนุมัติ" /><label id="lblponotapprove" style="font-size:15px; font-weight:bold; color:red;"/>	
+			</row>
+			<row><label value="มูลค่าสั่งซื้อทั้งสิ้น" /><label id="lblpoamount" style="font-size:15px; font-weight:bold; color:red;"/>	
+			</row>			
+			<row><label value="มูลค่ารับแล้วทั้งสิ้น" /><label id="lbltotalrv" style="font-size:15px; font-weight:bold; color:red;"/>	
+			</row>
+			<row><label value="มูลค่าค้างรับทั้งสิ้น" /><label id="lblporemain" style="font-size:15px; font-weight:bold; color:red;"/>	
+			</row>	
+			<row><label value="มูลค่าขายไปแล้วรวมทั้งสิ้น" /><label id="lblsaleamount" style="font-size:15px; font-weight:bold; color:red;"/>	
+			</row>	
+						
+		</rows>
+	</grid>
+	<hbox><button label="Exit" image="images/close16.png" onClick="winap.detach();" /></hbox>
+	<zscript>
+	<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.text.DecimalFormat;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+String vnewept;
+String vnewapcode;
+String vtypeDT;
+
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+// vuser ="panuvich";
+// vpassword="thaikom$$";
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";  
+DecimalFormat numformat = new DecimalFormat("#,###.00");
+
+public void checkuserlogin(){
+	try{
+	Cookie [] ck = ((HttpServletRequest)Executions.getCurrent().getNativeRequest()).getCookies();
+	for (Cookie cookie : ck) {
+		if (cookie.getName().equals("cuser")) {
+			vuser =cookie.getValue();
+		}
+	}
+	for (Cookie ckps : ck) {
+		if (ckps.getName().equals("cpass")) {
+			vpassword =ckps.getValue();
+		}
+	}	
+	if(vuser==null || vuser=="" || vpassword==null || vpassword==""){
+		//System.out.println("cookie = "+cookies);
+		Executions.sendRedirect("index.zul");		
+	} else
+	{		
+		loavdr();
+	}
+	
+	}catch (Exception e){}
+}
+	public void loavdr(){
+	 try{	
+		vnewept = bept.getValue();
+		vnewapcode = bapcode.getValue();
+		vtypeDT = btype.getValue();
+		Connection conn = DriverManager.getConnection(vurl, vuser, vpassword);
+		Statement s = conn.createStatement();
+		s.executeQuery("exec usp_np_ponotconfirmdaily_cat '"+vnewept+"','"+vnewapcode+"','"+vtypeDT+"'");			
+		ResultSet rsa = s.getResultSet();		
+		while(rsa.next()){
+			lblapcode1.setValue(rsa.getString("apcode"));
+			lblapname1.setValue(rsa.getString("apname"));
+			lblponotapprove.setValue(numformat.format(rsa.getDouble("sumnetamount")));
+			lblpoamount.setValue(numformat.format(rsa.getDouble("poamount")));
+			lblporemain.setValue(numformat.format(rsa.getDouble("poremainamount")));
+			lbltotalrv.setValue(numformat.format(rsa.getDouble("receiveamount")));
+			lblsaleamount.setValue(numformat.format(rsa.getDouble("saleamount")));
+		}
+		}catch(SQLException e){}
+}
+	]]>
+</zscript>
+</window>
+</zk>

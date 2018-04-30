@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?page title="Login"?>
+<zk>
+
+<borderlayout height="380px" style="background:#008BB6;" >
+	<north size="58px" border="0" style="background:#006A90;">
+	<div>
+	<image style="padding:0 0px;" src="/images/reorderhd.png"/>
+	<label style="position:relative; top:-10px;padding-left: 30px; font-size:14px;color:#FFFFFF;font-weight:bold;" 
+	value=""/>	
+	</div>
+	
+	</north>
+
+ <center>
+ <div align="center">
+ <!-- 
+  <image src="img/imgindex.jpg"/>
+   -->
+    
+ <window border="none" width="40%" onCreate="tbxfocus()">  
+   
+ <zscript><![CDATA[
+     
+    void redirect(){
+		  Executions.sendRedirect("vsub/register.zul");
+}
+
+    	
+    public void tbxfocus(){
+    	usernamebox.focus();
+    }
+
+
+]]></zscript>
+        <separator spacing="50px"/>
+        <label id="errLabel" style="color: red"/>
+        <groupbox mold="3d">
+        <caption image="/images/keyBlue.png" label="Login" style="font-size:18px; font-weight:bold; color:blue;"/>
+        <grid>
+            <rows>
+            	 <row>
+                    <div align="right"><label value="BC Username:"/></div>
+                    <textbox id="usernamebox" width="150px" constraint="no empty : กรุณาป้อนชื่อผู้ใช้ด้วยครับ."/>
+                </row>
+                <row>
+                    <div align="right"><label value="Password:"/></div>
+                    <textbox id="passwordbox" width="150px" type="password" constraint="no empty: กรุณาป้อนรหัสผ่านให้ถูกต้องครับ." onOK="checklogin()"/>
+                </row>            
+                <row spans="2" align="center">
+                    <button width="100px" label="Login" onClick="checklogin()"/>
+                </row>
+                <row>
+                
+                </row>
+            </rows>
+            </grid> 
+            </groupbox>           
+             <listbox id="box" visible="false" />
+ 
+        <zscript> 
+        <![CDATA[
+	
+       	import java.sql.*;
+        import javax.annotation.Resource;
+		import javax.servlet.http.Cookie;
+		import javax.servlet.http.HttpServletRequest;
+		import javax.servlet.http.HttpServletResponse; 
+		import javax.servlet.http.HttpSession;
+		import org.zkoss.zk.ui.Executions;
+		import org.zkoss.zul.Textbox;
+		import org.zkoss.zul.Label;
+		import java.text.SimpleDateFormat;
+		import java.util.Date;
+		import java.util.Calendar;
+		import java.security.*;
+		import javax.crypto.*;
+		import javax.crypto.spec.*;
+		import java.io.*;
+		
+		String vserver;
+		String vdbname;
+		String vurl;
+		String vurlbcnp;
+		String vuser;
+		String vpassword;
+		Session User;
+		String vsalename;
+		String vsalelevel;
+		String vprofitcode;
+		String vcatcode;
+		Integer vcatint;
+		Integer iLevel;
+		vserver="//192.168.0.7:1433;";
+		vdbname="bcnp";
+		// vuser ="panuvich";
+		// vpassword="thaikom$$";
+		//Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+		// vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+		// set Class connect SQL jdbc
+		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+		public void checklogin(){
+		
+				try{
+				vuser= usernamebox.getValue();
+				vpassword = passwordbox.getValue();
+				vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+				Connection conDB = DriverManager.getConnection(vurl, vuser, vpassword);
+				String query = "exec USP_NP_ReorderUserLogin'"+vuser+"'";							
+	            Statement st = conDB.createStatement();		
+				ResultSet rs = st.executeQuery(query);	
+				
+				
+	            if (rs.next()== true){ 	            	
+		            vsalelevel = rs.getString("userlevel");
+		            vprofitcode= rs.getString("profitcentercode");
+		            vcatcode = rs.getString("catcode");
+	            	HttpServletResponse response = (HttpServletResponse)Executions.getCurrent().getNativeResponse();
+	            	Cookie userCookie = new Cookie("cuser", vuser);
+	            	Cookie passCookie = new Cookie("cpass", vpassword);
+	            	Cookie levelCookie = new Cookie("ulevel", vsalelevel);
+	            	Cookie profitcode = new Cookie("ckprofitcode", vprofitcode);
+	            	Cookie catcode = new Cookie("ckcatcode",vcatcode);
+	            	//Cookie usernameCookie = new Cookie("uname",vsalename);
+	            	response.addCookie(userCookie); 
+	            	response.addCookie(passCookie);	   
+	            	response.addCookie(levelCookie);
+	            	response.addCookie(profitcode); 
+	            	response.addCookie(catcode);
+	            	userloginss();
+	            	iLevel=Integer.parseInt(vsalelevel);
+	            	if(iLevel==5){
+	            		Executions.sendRedirect("approvepo.zul");
+	            	}else{
+	            		Executions.sendRedirect("mainpage.zul");
+	            	}
+	                
+	                
+				}
+				}catch(SQLException e){	
+					System.out.println(e.getMessage());
+					System.out.println(e.getErrorCode());
+					
+					alert("ชื่อผู้ใช้ หรือ รหัสผ่านไม่ถูกต้อง..");
+				}            
+		}
+
+		public void userloginss(){
+			//----------log
+			try{
+			vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+""; 
+			Connection conDB1 = DriverManager.getConnection(vurl, vuser, vpassword);
+        	Statement lst = conDB1.createStatement();
+        	lst.executeQuery("Exec USP_NP_Roderlog  1,0,0,0,0");
+        	
+			}catch(SQLException e){}
+			
+        	//-----------	
+		}
+            ]]>
+        </zscript>
+    </window>
+    </div>
+  
+   
+
+    </center>
+	<south size="40px" border="0" style="background:#FFF">
+	
+		<toolbar mold="panel" align="center">	
+			NP-Reorder v.2.0 ® All right reserved. 
+			<toolbarbutton image="/images/webbrowser.png" />
+		</toolbar>
+	</south>
+</borderlayout>
+</zk>

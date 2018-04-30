@@ -1,0 +1,28 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="new page title" border="normal">
+<div height="450px" align="center">
+    <fisheyebar id="fsb" style="position:absolute; margin:5px 40px;" attachEdge="top"
+        itemWidth="80" itemHeight="80" itemMaxHeight="160" itemMaxWidth="160">
+        <fisheye label="Folder" onClick="prload()"
+            image="/images/prb.png" />
+        <fisheye label="Reading Glasses" onClick="poload()"
+			image="/images/pob.png" />     
+			<fisheye label="Reading Glasses" onClick="poload()"
+			image="/images/pob.png" />    
+    </fisheyebar>
+</div>
+<zscript>
+<![CDATA[
+import java.io.*;
+import org.zkoss.zk.ui.Executions;
+         public void prload(){
+        	 Executions.sendRedirect("prlist.zul");
+         }
+         public void poload(){
+        	 Executions.sendRedirect("poprocess.zul");
+         }
+	]]>
+</zscript>
+</window>
+</zk>

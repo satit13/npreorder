@@ -1,0 +1,173 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="new page title" border="normal" onCreate="loadAllLog()">
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="panuvich";
+vpassword="thaikom$$";
+Connection vConnectdb;
+
+//---------------
+String pvrofit;
+String pvexpertcode;
+String pvsectioncode;
+String pvdepartmentcode;
+String pvdocno;
+String pvprno;
+String pvitemcode;
+String pvlinenumber;
+Double nqty;
+Double naddqty;
+Double iaddqty;
+Integer iadj;
+String vajdocno;
+String vajdocdate;
+String vajitemcode;
+String vajqty;
+String vajunitcode;
+String vajapcode;
+Double vgetqty;
+//---------------
+
+
+//set format
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("#,##0.00");
+// set Class connect SQL jdbc
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+public void publicconnection(){
+	if(vuser !="" ||  vuser!=null){
+		try{
+		vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+		vConnectdb =  DriverManager.getConnection(vurl, vuser, vpassword);
+		//System.out.println("connect db");
+		}catch(SQLException e){}
+	}
+}
+
+public void loadAllLog(){
+	Integer counta1=0, counta2=0, counta3=0, counta4=0, counta5=0, counta6=0;
+	Integer noad1=0, noad2=0, noad3=0,noad4=0;
+	Integer isad1, isad2, isad3, isad4, isad5, isad6;
+	
+	try{
+		publicconnection();
+		Statement st = vConnectdb.createStatement();
+		st.executeQuery("exec USP_NP_ReorderMonitor '0'");
+		ResultSet rs = st.getResultSet();
+		while(lsall.getItemCount()>0){
+			lsall.removeItemAt(0);
+		}
+		while(rs.next()){
+			Listitem li = new Listitem();
+			isad1=rs.getInt("isAdjust1");			
+			isad2=rs.getInt("isAdjust2");
+			isad3=rs.getInt("isPost");
+			isad4=rs.getInt("iseditconfirm");
+			isad5=rs.getInt("isReject");
+			isad6=rs.getInt("isCancel");
+			if(isad1==1){
+				counta1+=1;				
+			}else {noad1+=1; }
+			
+			if(isad2==1 && isad5 !=1){
+				counta2+=1;
+			}else if(isad2==0 &&isad5!=1) {noad2+=1; }
+			
+			if(isad3==1 && isad5!=1){
+				counta3+=1;
+			}else if(isad3==0 && isad5==0){noad3+=1; }
+			
+			if(isad4==1 && isad5==0){
+				counta4+=1;
+			}else if(isad4==0 && isad5==0){noad4+=1; }
+			
+			if(isad5==1){
+				counta5+=1;
+			}			
+			if(isad6==1){
+				counta6+=1;
+			}
+			
+			li.appendChild(new Listcell(isad1.toString()));
+			lsall.appendChild(li);
+			
+			lbla1.setValue(counta1.toString());
+			lblb1.setValue(noad1.toString());
+			lbla2.setValue(counta2.toString());
+			lblb2.setValue(noad2.toString());
+			lbla3.setValue(counta3.toString());
+			lblb3.setValue(noad3.toString());
+			lbla4.setValue(counta4.toString());
+			lblb4.setValue(noad4.toString());
+			lbla5.setValue(counta5.toString());
+			lbla6.setValue(counta6.toString());
+		}
+	}catch(Exception e){}
+}
+         
+	]]>
+
+</zscript>
+<listbox id="lsall" visible="false">
+</listbox>
+<grid>
+		<columns>
+			<column label=""/>
+			<column label=""/>
+			<column label=""/>
+			<column label=""/>
+		</columns>
+		<rows>
+			<row><label value="จำนวนรายการที่ Addjust" /><label id="lbla1" /><label value="จำนวนรายการที่ยังไม่ได้ Adjust" /><label id="lblb1" />
+			</row>	
+			<row><label value="จำนวนรายการที่ อนุมัติ" /><label id="lbla2" /><label value="จำนวนรายการที่ยังไม่ได้อนุมัติ" /><label id="lblb2" />
+			</row>	
+			<row><label value="จำนวนรายการที่ Consolidate" /><label id="lbla3" /><label value="จำนวนรายการที่ยังไม่ได้ Consolidate" /><label id="lblb3" />
+			</row>	
+			<row><label value="จำนวนรายการที่ จัดซื้อConfirm" /><label id="lbla4" /><label value="จำนวนรายการที่ยังไม่ได้ Confirm" /><label id="lblb4" />
+			</row>
+			<row><label value="จำนวนรายการที่ Reject" /><label id="lbla5" /><label value="จำนวนรายการที่ Cancel" /><label id="lbla6" />
+			</row>
+		</rows>
+	</grid>
+	<groupbox> 
+	<radiogroup>
+	<radio label="รายการ Adjust" onCheck=""/>
+	<radio label="รายการยังไม่ได้ Adjust" onCheck=""/>
+	<radio label="รายการอนุมัติ" onCheck=""/>
+	<radio label="รายการยังไม่ได้อนุมัติ" onCheck=""/>
+	</radiogroup>
+	</groupbox>
+</window>
+</zk>

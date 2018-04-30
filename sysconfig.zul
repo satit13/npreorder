@@ -1,0 +1,6 @@
+<?page title="System Config" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="System Config" border="normal">
+New Content Here!
+</window>
+</zk>

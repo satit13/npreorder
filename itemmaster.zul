@@ -1,0 +1,129 @@
+<?page title="new page title" contentType="text/html;charset=UTF-8"?>
+<zk>
+<window title="new page title" border="normal">
+<hbox>
+<label value="ค้นหาสินค้า :" /><textbox id="txSearchitem"/><button label="ค้นหา" onClick="iSearchItem()" />
+</hbox>
+<listbox id="lsitem">
+	<listhead>
+		<listheader label="ลำดับ" width="50px"/>
+		<listheader label="รหัสสินค้า" />
+		<listheader label="ชื่อสินค้า" width="200px"/>
+		<listheader label="ราคาขาย" />
+		<listheader label="หน่วยหลัก" />
+		<listheader label="พร้อมขาย" />
+		<listheader label="คงคลัง" />
+		<listheader label="ค้างจ่าย" />	
+		<listheader label="ค้างรับ" />		
+	</listhead>
+</listbox>
+
+<zscript>
+<![CDATA[
+import java.sql.*;
+import java.io.*;
+import java.lang.*;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse; 
+import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.Calendar;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.event.CreateEvent;
+import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zk.ui.Executions;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.event.EventListener;
+import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zul.Listbox;
+import org.zkoss.zul.Combobox;
+
+String vserver;
+String vdbname;
+String vurl;
+String vuser;
+String vpassword;
+vserver="//192.168.0.7:1433;";
+vdbname="bcnp";
+vuser ="siriranya";
+vpassword="9288026";
+Connection vCon;
+
+SimpleDateFormat dtmformat= new SimpleDateFormat("dd/MM/yyyy");
+DecimalFormat numformat = new DecimalFormat("##0.00");
+Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+vurl="jdbc:sqlserver:"+vserver+"databaseName="+vdbname+"";
+
+public void pConnectDB(){
+	if(vuser !="" ||  vuser!=null){
+		try{
+		
+		vCon =  DriverManager.getConnection(vurl, vuser, vpassword);
+		//System.out.println("connect db");
+		}catch(SQLException e){}
+	}
+}
+
+public void iSearchItem(){
+	String vItem;
+	String vQry;
+	Integer n=0;
+	try{
+		vItem=txSearchitem.getValue();
+		pConnectDB();		
+		Statement st = vCon.createStatement();
+		vQry="exec USP_IV_ItemDesc '"+vItem+"','1'";
+		System.out.println(vQry);
+		st.executeQuery(vQry);
+		ResultSet rs = st.getResultSet();
+		while(lsitem.getItemCount()>0){
+			lsitem.removeItemAt(0);
+		}
+		while(rs.next()){
+			n=n+1;
+			Listitem li = new Listitem();
+			Listcell lc0 = new Listcell();
+			Listcell lc1 = new Listcell();
+			Listcell lc2 = new Listcell();
+			Listcell lc3 = new Listcell();
+			Listcell lc4 = new Listcell();
+			Listcell lc5 = new Listcell();
+			Listcell lc6 = new Listcell();
+			Listcell lc7 = new Listcell();
+			Listcell lc8 = new Listcell();
+			lc0.setLabel(Integer.toString(n));
+			lc1.setLabel(rs.getString("ITEMNMBR"));
+			lc2.setLabel(rs.getString("ITEMDESC"));
+			lc3.setLabel(numformat.format(rs.getDouble("UOMPRICE")));
+			lc4.setLabel(rs.getString("UOFM"));
+			lc5.setLabel(numformat.format(rs.getDouble("QTYONHND")));
+			lc6.setLabel(numformat.format(rs.getDouble("QTYAVAL")));
+			lc7.setLabel(numformat.format(rs.getDouble("QTYDLIVR")));
+			lc8.setLabel(numformat.format(rs.getDouble("QTYONORD")));
+			li.appendChild(lc0);
+			li.appendChild(lc1);
+			li.appendChild(lc2);
+			li.appendChild(lc3);
+			li.appendChild(lc4);
+			li.appendChild(lc5);
+			li.appendChild(lc6);
+			li.appendChild(lc7);
+			li.appendChild(lc8);
+			lsitem.appendChild(li);			
+			
+		}
+		
+	}catch(SQLException e){}
+	
+	
+}
+         
+	]]>
+</zscript>
+
+</window>
+</zk>
